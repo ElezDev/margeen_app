@@ -8,24 +8,49 @@ class StatusBadge extends StatelessWidget {
 
   final String status;
 
+  (Color bg, Color fg) _colors() {
+    switch (status) {
+      case 'cancelled':
+        return (
+          AppColors.error.withValues(alpha: 0.1),
+          AppColors.error,
+        );
+      case 'issued':
+        return (
+          AppColors.profit.withValues(alpha: 0.1),
+          AppColors.profit,
+        );
+      case 'draft':
+        return (
+          AppColors.warning.withValues(alpha: 0.12),
+          AppColors.warning,
+        );
+      default:
+        return (
+          AppColors.info.withValues(alpha: 0.1),
+          AppColors.info,
+        );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    final isCancelled = status == 'cancelled';
-    final color = isCancelled ? AppColors.error : AppColors.profit;
+    final theme = Theme.of(context);
+    final (bg, fg) = _colors();
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(20),
+        color: bg,
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: fg.withValues(alpha: 0.2)),
       ),
       child: Text(
         statusLabel(status),
-        style: TextStyle(
-          fontSize: 11,
-          fontWeight: FontWeight.w700,
-          color: color,
-          letterSpacing: 0.2,
+        style: theme.textTheme.labelSmall?.copyWith(
+          fontWeight: FontWeight.w600,
+          color: fg,
+          letterSpacing: 0.15,
         ),
       ),
     );

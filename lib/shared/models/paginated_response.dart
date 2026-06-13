@@ -17,10 +17,19 @@ class PaginatedResponse<T> {
     Map<String, dynamic> json,
     T Function(Map<String, dynamic>) fromJsonT,
   ) {
-    final meta = json['meta'] as Map<String, dynamic>;
     final items = (json['data'] as List<dynamic>)
         .map((e) => fromJsonT(e as Map<String, dynamic>))
         .toList();
+
+    final meta = json['meta'] as Map<String, dynamic>?;
+    if (meta == null) {
+      return PaginatedResponse(
+        data: items,
+        currentPage: 1,
+        lastPage: 1,
+        total: items.length,
+      );
+    }
 
     return PaginatedResponse(
       data: items,

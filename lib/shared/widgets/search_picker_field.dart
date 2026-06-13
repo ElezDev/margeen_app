@@ -98,6 +98,8 @@ Future<T?> showSearchPickerSheet<T>({
   required String Function(T item) titleBuilder,
   required String Function(T item) subtitleBuilder,
   IconData itemIcon = Icons.circle_outlined,
+  int minQueryLength = 2,
+  bool loadOnOpen = false,
 }) {
   return showModalBottomSheet<T>(
     context: context,
@@ -110,6 +112,8 @@ Future<T?> showSearchPickerSheet<T>({
       titleBuilder: titleBuilder,
       subtitleBuilder: subtitleBuilder,
       itemIcon: itemIcon,
+      minQueryLength: minQueryLength,
+      loadOnOpen: loadOnOpen,
     ),
   );
 }
@@ -122,6 +126,8 @@ class _SearchPickerSheet<T> extends StatefulWidget {
     required this.titleBuilder,
     required this.subtitleBuilder,
     required this.itemIcon,
+    this.minQueryLength = 2,
+    this.loadOnOpen = false,
   });
 
   final String title;
@@ -130,6 +136,8 @@ class _SearchPickerSheet<T> extends StatefulWidget {
   final String Function(T item) titleBuilder;
   final String Function(T item) subtitleBuilder;
   final IconData itemIcon;
+  final int minQueryLength;
+  final bool loadOnOpen;
 
   @override
   State<_SearchPickerSheet<T>> createState() => _SearchPickerSheetState<T>();
@@ -142,16 +150,28 @@ class _SearchPickerSheetState<T> extends State<_SearchPickerSheet<T>> {
   String? _error;
 
   @override
+  void initState() {
+    super.initState();
+    if (widget.loadOnOpen) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _search(''));
+    }
+  }
+
+  @override
   void dispose() {
     _controller.dispose();
     super.dispose();
   }
 
   Future<void> _search(String query) async {
-    if (query.trim().length < 2) {
+    final trimmed = query.trim();
+    final canSearchEmpty = widget.loadOnOpen && trimmed.isEmpty;
+
+    if (trimmed.length < widget.minQueryLength && !canSearchEmpty) {
       setState(() {
         _results = [];
         _error = null;
+        _isLoading = false;
       });
       return;
     }
@@ -162,7 +182,7 @@ class _SearchPickerSheetState<T> extends State<_SearchPickerSheet<T>> {
     });
 
     try {
-      final results = await widget.onSearch(query.trim());
+      final results = await widget.onSearch(trimmed);
       if (mounted) {
         setState(() {
           _results = results;
@@ -240,10 +260,11 @@ class _SearchPickerSheetState<T> extends State<_SearchPickerSheet<T>> {
       return Center(child: Text(_error!, textAlign: TextAlign.center));
     }
 
-    if (_controller.text.trim().length < 2) {
+    if (_controller.text.trim().length < widget.minQueryLength &&
+        !(widget.loadOnOpen && _controller.text.trim().isEmpty)) {
       return Center(
         child: Text(
-          'Escribe al menos 2 caracteres',
+          'Escribe al menos ${widget.minQueryLength} caracteres',
           style: theme.textTheme.bodyMedium?.copyWith(
             color: theme.colorScheme.onSurfaceVariant,
           ),
@@ -254,7 +275,9 @@ class _SearchPickerSheetState<T> extends State<_SearchPickerSheet<T>> {
     if (_results.isEmpty) {
       return Center(
         child: Text(
-          'Sin resultados',
+          widget.loadOnOpen && _controller.text.trim().isEmpty
+              ? 'No hay elementos disponibles'
+              : 'Sin resultados',
           style: theme.textTheme.bodyMedium?.copyWith(
             color: theme.colorScheme.onSurfaceVariant,
           ),

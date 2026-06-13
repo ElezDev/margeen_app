@@ -30,6 +30,8 @@ String statusLabel(String status) {
       return 'Emitida';
     case 'cancelled':
       return 'Anulada';
+    case 'draft':
+      return 'Borrador';
     default:
       return status;
   }

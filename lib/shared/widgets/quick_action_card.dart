@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../core/theme/app_spacing.dart';
+
 class QuickActionCard extends StatelessWidget {
   const QuickActionCard({
     super.key,
@@ -25,13 +27,15 @@ class QuickActionCard extends StatelessWidget {
       color: Colors.transparent,
       child: InkWell(
         onTap: enabled ? onTap : null,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(AppRadius.md),
         child: Ink(
           decoration: BoxDecoration(
             color: theme.colorScheme.surfaceContainerLow,
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(AppRadius.md),
             border: Border.all(
-              color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5),
+              color: theme.colorScheme.outlineVariant.withValues(
+                alpha: theme.brightness == Brightness.dark ? 0.35 : 0.5,
+              ),
             ),
           ),
           child: Padding(
@@ -42,16 +46,15 @@ class QuickActionCard extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: effectiveColor.withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(12),
+                    color: effectiveColor.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(AppRadius.sm),
                   ),
-                  child: Icon(icon, color: effectiveColor, size: 22),
+                  child: Icon(icon, color: effectiveColor, size: 21),
                 ),
                 const Spacer(),
                 Text(
                   label,
                   style: theme.textTheme.titleSmall?.copyWith(
-                    fontWeight: FontWeight.w600,
                     color: enabled
                         ? theme.colorScheme.onSurface
                         : theme.colorScheme.onSurfaceVariant,

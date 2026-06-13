@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../core/theme/app_colors.dart';
+import '../../core/theme/app_spacing.dart';
 import '../utils/formatters.dart';
 
 class ProfitBanner extends StatelessWidget {
@@ -15,32 +16,37 @@ class ProfitBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     final profitColor = isDark ? AppColors.profitDark : AppColors.profit;
 
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(AppSpacing.page),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            profitColor.withValues(alpha: isDark ? 0.25 : 0.15),
-            profitColor.withValues(alpha: isDark ? 0.12 : 0.05),
+            profitColor.withValues(alpha: isDark ? 0.22 : 0.12),
+            profitColor.withValues(alpha: isDark ? 0.1 : 0.04),
           ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: profitColor.withValues(alpha: 0.25)),
+        borderRadius: BorderRadius.circular(AppRadius.md),
+        border: Border.all(color: profitColor.withValues(alpha: 0.2)),
       ),
       child: Row(
         children: [
           Container(
-            padding: const EdgeInsets.all(12),
+            padding: const EdgeInsets.all(11),
             decoration: BoxDecoration(
-              color: profitColor.withValues(alpha: 0.2),
-              borderRadius: BorderRadius.circular(12),
+              color: profitColor.withValues(alpha: 0.16),
+              borderRadius: BorderRadius.circular(AppRadius.sm),
             ),
-            child: Icon(Icons.trending_up_rounded, color: profitColor, size: 28),
+            child: Icon(
+              Icons.trending_up_rounded,
+              color: profitColor,
+              size: 24,
+            ),
           ),
           const SizedBox(width: 16),
           Expanded(
@@ -49,19 +55,16 @@ class ProfitBanner extends StatelessWidget {
               children: [
                 Text(
                   'Ganancia',
-                  style: TextStyle(
+                  style: theme.textTheme.labelMedium?.copyWith(
                     color: profitColor,
-                    fontWeight: FontWeight.w500,
-                    fontSize: 13,
                   ),
                 ),
                 Text(
                   formatCurrency(totalProfit),
-                  style: TextStyle(
-                    fontSize: 24,
+                  style: theme.textTheme.headlineSmall?.copyWith(
                     fontWeight: FontWeight.w800,
                     color: profitColor,
-                    letterSpacing: -0.5,
+                    letterSpacing: -0.4,
                   ),
                 ),
               ],
@@ -72,12 +75,13 @@ class ProfitBanner extends StatelessWidget {
             children: [
               Text(
                 'Margen',
-                style: TextStyle(color: profitColor.withValues(alpha: 0.8)),
+                style: theme.textTheme.labelSmall?.copyWith(
+                  color: profitColor.withValues(alpha: 0.85),
+                ),
               ),
               Text(
                 '$marginPercent%',
-                style: TextStyle(
-                  fontSize: 22,
+                style: theme.textTheme.titleLarge?.copyWith(
                   fontWeight: FontWeight.w800,
                   color: profitColor,
                 ),

@@ -4,7 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/api/api_exception.dart';
 import '../../core/auth/auth_provider.dart';
 import '../../core/config/app_config.dart';
-import '../../core/theme/app_colors.dart';
+import '../../core/theme/app_decorations.dart';
+import '../../core/theme/app_spacing.dart';
 import '../../shared/widgets/margeen_card.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
@@ -58,66 +59,59 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
     final size = MediaQuery.sizeOf(context);
 
     return Scaffold(
       body: Stack(
         children: [
           Container(
-            height: size.height * 0.42,
+            height: size.height * 0.44,
             decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: isDark
-                    ? [const Color(0xFF065F46), const Color(0xFF134E4A)]
-                    : [AppColors.gradientStart, AppColors.gradientEnd],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
+              gradient: AppDecorations.brandGradient(theme.brightness),
             ),
           ),
           SafeArea(
             child: Center(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(horizontal: 24),
+                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.page + 4),
                 child: ConstrainedBox(
                   constraints: const BoxConstraints(maxWidth: 420),
                   child: Column(
                     children: [
-                      const SizedBox(height: 24),
+                      const SizedBox(height: 28),
                       Container(
-                        padding: const EdgeInsets.all(18),
+                        padding: const EdgeInsets.all(20),
                         decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.15),
+                          color: Colors.white.withValues(alpha: 0.12),
                           shape: BoxShape.circle,
+                          border: Border.all(
+                            color: Colors.white.withValues(alpha: 0.18),
+                          ),
                         ),
                         child: const Icon(
                           Icons.receipt_long_rounded,
-                          size: 48,
+                          size: 44,
                           color: Colors.white,
                         ),
                       ),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 18),
                       Text(
                         AppConfig.appName,
-                        style: const TextStyle(
+                        style: theme.textTheme.headlineMedium?.copyWith(
                           color: Colors.white,
-                          fontSize: 32,
-                          fontWeight: FontWeight.w800,
-                          letterSpacing: -0.5,
                         ),
                       ),
                       const SizedBox(height: 6),
                       Text(
                         'Factura rápido, controla tu ganancia',
                         style: TextStyle(
-                          color: Colors.white.withValues(alpha: 0.9),
+                          color: Colors.white.withValues(alpha: 0.88),
                           fontSize: 15,
                         ),
                       ),
                       const SizedBox(height: 36),
                       MargeenCard(
-                        padding: const EdgeInsets.all(24),
+                        padding: const EdgeInsets.all(AppSpacing.section),
                         child: Form(
                           key: _formKey,
                           child: Column(
@@ -125,9 +119,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                             children: [
                               Text(
                                 'Iniciar sesión',
-                                style: theme.textTheme.titleLarge?.copyWith(
-                                  fontWeight: FontWeight.w700,
-                                ),
+                                style: theme.textTheme.titleLarge,
                               ),
                               const SizedBox(height: 4),
                               Text(
@@ -136,7 +128,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                   color: theme.colorScheme.onSurfaceVariant,
                                 ),
                               ),
-                              const SizedBox(height: 24),
+                              const SizedBox(height: AppSpacing.section),
                               TextFormField(
                                 controller: _emailController,
                                 keyboardType: TextInputType.emailAddress,

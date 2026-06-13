@@ -4,8 +4,10 @@ import 'package:go_router/go_router.dart';
 
 import '../../core/auth/auth_provider.dart';
 import '../../core/theme/app_colors.dart';
+import '../../core/theme/app_spacing.dart';
 import '../../core/theme/theme_mode_provider.dart';
 import '../../shared/widgets/margeen_card.dart';
+import '../../shared/widgets/screen_header.dart';
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
@@ -25,134 +27,151 @@ class SettingsScreen extends ConsumerWidget {
     return Scaffold(
       body: SafeArea(
         child: ListView(
-          padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
+          padding: const EdgeInsets.only(bottom: 32),
           children: [
-            Text(
-              'Más',
-              style: theme.textTheme.headlineMedium?.copyWith(
-                fontWeight: FontWeight.w800,
-                letterSpacing: -0.5,
-              ),
+            const ScreenHeader(
+              title: 'Más',
+              subtitle: 'Cuenta y preferencias',
             ),
-            const SizedBox(height: 20),
-            MargeenCard(
-              child: Row(
-                children: [
-                  CircleAvatar(
-                    radius: 28,
-                    backgroundColor:
-                        theme.colorScheme.primary.withValues(alpha: 0.15),
-                    child: Text(
-                      user.name.isNotEmpty ? user.name[0].toUpperCase() : '?',
-                      style: TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.w700,
-                        color: theme.colorScheme.primary,
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.page),
+              child: MargeenCard(
+                child: Row(
+                  children: [
+                    CircleAvatar(
+                      radius: 26,
+                      backgroundColor:
+                          theme.colorScheme.primary.withValues(alpha: 0.12),
+                      child: Text(
+                        user.name.isNotEmpty ? user.name[0].toUpperCase() : '?',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w700,
+                          color: theme.colorScheme.primary,
+                        ),
                       ),
                     ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            user.name,
+                            style: theme.textTheme.titleMedium,
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            user.email,
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: theme.colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            user.isAdmin ? 'Administrador' : 'Vendedor',
+                            style: theme.textTheme.labelMedium?.copyWith(
+                              color: theme.colorScheme.primary,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: AppSpacing.section),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.page),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Apariencia',
+                    style: theme.textTheme.labelLarge?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
                   ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          user.name,
-                          style: theme.textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.w700,
-                          ),
+                  const SizedBox(height: 10),
+                  MargeenCard(
+                    padding: const EdgeInsets.all(12),
+                    child: SegmentedButton<ThemeMode>(
+                      segments: const [
+                        ButtonSegment(
+                          value: ThemeMode.system,
+                          label: Text('Sistema'),
+                          icon: Icon(Icons.brightness_auto_outlined, size: 18),
                         ),
-                        const SizedBox(height: 2),
-                        Text(
-                          user.email,
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: theme.colorScheme.onSurfaceVariant,
-                          ),
+                        ButtonSegment(
+                          value: ThemeMode.light,
+                          label: Text('Claro'),
+                          icon: Icon(Icons.light_mode_outlined, size: 18),
                         ),
-                        const SizedBox(height: 4),
-                        Text(
-                          user.isAdmin ? 'Administrador' : 'Vendedor',
-                          style: theme.textTheme.labelMedium?.copyWith(
-                            color: theme.colorScheme.primary,
-                            fontWeight: FontWeight.w600,
-                          ),
+                        ButtonSegment(
+                          value: ThemeMode.dark,
+                          label: Text('Oscuro'),
+                          icon: Icon(Icons.dark_mode_outlined, size: 18),
                         ),
                       ],
+                      selected: {themeMode},
+                      onSelectionChanged: (selection) {
+                        ref
+                            .read(themeModeProvider.notifier)
+                            .setMode(selection.first);
+                      },
                     ),
                   ),
                 ],
               ),
             ),
-            const SizedBox(height: 24),
-            Text(
-              'Apariencia',
-              style: theme.textTheme.titleSmall?.copyWith(
-                fontWeight: FontWeight.w700,
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
-            ),
-            const SizedBox(height: 10),
-            MargeenCard(
-              padding: const EdgeInsets.all(12),
-              child: SegmentedButton<ThemeMode>(
-                segments: const [
-                  ButtonSegment(
-                    value: ThemeMode.system,
-                    label: Text('Sistema'),
-                    icon: Icon(Icons.brightness_auto_outlined, size: 18),
+            const SizedBox(height: AppSpacing.section),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.page),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Administración',
+                    style: theme.textTheme.labelLarge?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
                   ),
-                  ButtonSegment(
-                    value: ThemeMode.light,
-                    label: Text('Claro'),
-                    icon: Icon(Icons.light_mode_outlined, size: 18),
-                  ),
-                  ButtonSegment(
-                    value: ThemeMode.dark,
-                    label: Text('Oscuro'),
-                    icon: Icon(Icons.dark_mode_outlined, size: 18),
+                  const SizedBox(height: 10),
+                  if (user.can('users.manage')) ...[
+                    MargeenCard(
+                      onTap: () => context.push('/users'),
+                      child: const _SettingsTile(
+                        icon: Icons.manage_accounts_outlined,
+                        title: 'Usuarios',
+                        subtitle: 'Gestionar equipo de ventas',
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                  ],
+                  MargeenCard(
+                    child: _SettingsTile(
+                      icon: Icons.storefront_outlined,
+                      title: user.company?.name ?? 'Empresa',
+                      subtitle: user.company?.document ?? 'Sin documento',
+                    ),
                   ),
                 ],
-                selected: {themeMode},
-                onSelectionChanged: (selection) {
-                  ref.read(themeModeProvider.notifier).setMode(selection.first);
-                },
               ),
             ),
-            const SizedBox(height: 24),
-            Text(
-              'Administración',
-              style: theme.textTheme.titleSmall?.copyWith(
-                fontWeight: FontWeight.w700,
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
-            ),
-            const SizedBox(height: 10),
-            if (user.can('users.manage'))
-              MargeenCard(
-                onTap: () => context.push('/users'),
+            const SizedBox(height: AppSpacing.section),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.page),
+              child: MargeenCard(
+                onTap: () => _confirmLogout(context, ref),
                 child: const _SettingsTile(
-                  icon: Icons.manage_accounts_outlined,
-                  title: 'Usuarios',
-                  subtitle: 'Gestionar equipo de ventas',
+                  icon: Icons.logout_rounded,
+                  title: 'Cerrar sesión',
+                  subtitle: 'Salir de tu cuenta',
+                  iconColor: AppColors.error,
+                  titleColor: AppColors.error,
                 ),
-              ),
-            if (user.can('users.manage')) const SizedBox(height: 10),
-            MargeenCard(
-              child: _SettingsTile(
-                icon: Icons.storefront_outlined,
-                title: user.company?.name ?? 'Empresa',
-                subtitle: user.company?.document ?? 'Sin documento',
-              ),
-            ),
-            const SizedBox(height: 24),
-            MargeenCard(
-              onTap: () => _confirmLogout(context, ref),
-              child: const _SettingsTile(
-                icon: Icons.logout_rounded,
-                title: 'Cerrar sesión',
-                subtitle: 'Salir de tu cuenta',
-                iconColor: AppColors.error,
-                titleColor: AppColors.error,
               ),
             ),
           ],
@@ -207,7 +226,19 @@ class _SettingsTile extends StatelessWidget {
 
     return Row(
       children: [
-        Icon(icon, color: iconColor ?? theme.colorScheme.primary),
+        Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: (iconColor ?? theme.colorScheme.primary)
+                .withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(AppRadius.sm),
+          ),
+          child: Icon(
+            icon,
+            size: 20,
+            color: iconColor ?? theme.colorScheme.primary,
+          ),
+        ),
         const SizedBox(width: 14),
         Expanded(
           child: Column(
@@ -216,7 +247,6 @@ class _SettingsTile extends StatelessWidget {
               Text(
                 title,
                 style: theme.textTheme.titleSmall?.copyWith(
-                  fontWeight: FontWeight.w600,
                   color: titleColor,
                 ),
               ),
@@ -232,7 +262,7 @@ class _SettingsTile extends StatelessWidget {
         ),
         if (titleColor == null)
           Icon(
-            Icons.chevron_right,
+            Icons.chevron_right_rounded,
             color: theme.colorScheme.onSurfaceVariant,
           ),
       ],

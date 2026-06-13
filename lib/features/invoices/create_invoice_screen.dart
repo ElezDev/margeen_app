@@ -96,11 +96,17 @@ class _CreateInvoiceScreenState extends ConsumerState<CreateInvoiceScreen> {
     return showSearchPickerSheet<Product>(
       context: context,
       title: 'Seleccionar producto',
-      searchHint: 'Nombre del producto',
+      searchHint: 'Filtrar por nombre (opcional)',
       itemIcon: Icons.inventory_2_outlined,
+      loadOnOpen: true,
+      minQueryLength: 0,
       onSearch: (q) => ref
           .read(productRepositoryProvider)
-          .list(query: q, activeOnly: true)
+          .list(
+            query: q.isEmpty ? null : q,
+            activeOnly: true,
+            perPage: 100,
+          )
           .then((p) => p.data),
       titleBuilder: (p) => p.name,
       subtitleBuilder: (p) => '${p.unit} · ${formatCurrency(p.salePrice)}',
@@ -244,7 +250,7 @@ class _CreateInvoiceScreenState extends ConsumerState<CreateInvoiceScreen> {
             if (_useCatalogProduct)
               SearchPickerField<Product>(
                 label: 'Producto',
-                hint: 'Buscar en catálogo',
+                hint: 'Toca para ver el catálogo',
                 selectedItem: _selectedProduct,
                 titleBuilder: (p) => p.name,
                 subtitleBuilder: (p) =>

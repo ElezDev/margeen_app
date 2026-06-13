@@ -3,10 +3,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/theme/app_colors.dart';
+import '../../core/theme/app_decorations.dart';
+import '../../core/theme/app_spacing.dart';
 import '../../shared/models/user.dart';
 import '../../shared/widgets/auth_guard.dart';
 import '../../shared/widgets/margeen_card.dart';
 import '../../shared/widgets/quick_action_card.dart';
+import '../../shared/widgets/screen_header.dart';
 
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
@@ -27,7 +30,6 @@ class _HomeContent extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
 
     return Scaffold(
       body: SafeArea(
@@ -35,24 +37,17 @@ class _HomeContent extends StatelessWidget {
           slivers: [
             SliverToBoxAdapter(
               child: Container(
-                margin: const EdgeInsets.fromLTRB(20, 16, 20, 0),
-                padding: const EdgeInsets.all(24),
+                margin: const EdgeInsets.fromLTRB(
+                  AppSpacing.page,
+                  16,
+                  AppSpacing.page,
+                  0,
+                ),
+                padding: const EdgeInsets.all(AppSpacing.section),
                 decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: isDark
-                        ? [const Color(0xFF065F46), const Color(0xFF0F766E)]
-                        : [AppColors.gradientStart, AppColors.gradientEnd],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  borderRadius: BorderRadius.circular(24),
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppColors.primary.withValues(alpha: 0.25),
-                      blurRadius: 20,
-                      offset: const Offset(0, 8),
-                    ),
-                  ],
+                  gradient: AppDecorations.brandGradient(theme.brightness),
+                  borderRadius: BorderRadius.circular(AppRadius.xl),
+                  boxShadow: AppDecorations.heroShadow(theme.brightness),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -60,15 +55,15 @@ class _HomeContent extends StatelessWidget {
                     Row(
                       children: [
                         CircleAvatar(
-                          radius: 26,
-                          backgroundColor: Colors.white.withValues(alpha: 0.2),
+                          radius: 24,
+                          backgroundColor: Colors.white.withValues(alpha: 0.18),
                           child: Text(
                             user.name.isNotEmpty
                                 ? user.name[0].toUpperCase()
                                 : '?',
                             style: const TextStyle(
                               color: Colors.white,
-                              fontSize: 20,
+                              fontSize: 18,
                               fontWeight: FontWeight.w700,
                             ),
                           ),
@@ -80,17 +75,16 @@ class _HomeContent extends StatelessWidget {
                             children: [
                               Text(
                                 'Hola, ${user.name.split(' ').first}',
-                                style: const TextStyle(
+                                style: theme.textTheme.headlineSmall?.copyWith(
                                   color: Colors.white,
-                                  fontSize: 22,
-                                  fontWeight: FontWeight.w800,
-                                  letterSpacing: -0.3,
+                                  fontWeight: FontWeight.w700,
                                 ),
                               ),
+                              const SizedBox(height: 2),
                               Text(
                                 user.company?.name ?? 'Margeen',
                                 style: TextStyle(
-                                  color: Colors.white.withValues(alpha: 0.85),
+                                  color: Colors.white.withValues(alpha: 0.82),
                                   fontSize: 14,
                                 ),
                               ),
@@ -99,15 +93,18 @@ class _HomeContent extends StatelessWidget {
                         ),
                       ],
                     ),
-                    const SizedBox(height: 20),
+                    const SizedBox(height: 18),
                     Container(
                       padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 6,
+                        horizontal: 11,
+                        vertical: 5,
                       ),
                       decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.15),
-                        borderRadius: BorderRadius.circular(20),
+                        color: Colors.white.withValues(alpha: 0.14),
+                        borderRadius: BorderRadius.circular(999),
+                        border: Border.all(
+                          color: Colors.white.withValues(alpha: 0.2),
+                        ),
                       ),
                       child: Text(
                         user.isAdmin ? 'Administrador' : 'Vendedor',
@@ -123,24 +120,29 @@ class _HomeContent extends StatelessWidget {
               ),
             ),
             SliverPadding(
-              padding: const EdgeInsets.fromLTRB(20, 24, 20, 0),
-              sliver: SliverToBoxAdapter(
-                child: Text(
-                  'Acciones rápidas',
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.page,
+                AppSpacing.section,
+                AppSpacing.page,
+                0,
+              ),
+              sliver: const SliverToBoxAdapter(
+                child: SectionHeader(title: 'Acciones rápidas'),
               ),
             ),
             SliverPadding(
-              padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.page,
+                AppSpacing.card,
+                AppSpacing.page,
+                0,
+              ),
               sliver: SliverToBoxAdapter(
                 child: Row(
                   children: [
                     Expanded(
                       child: SizedBox(
-                        height: 110,
+                        height: 108,
                         child: QuickActionCard(
                           icon: Icons.add_circle_outline,
                           label: 'Nueva factura',
@@ -150,10 +152,10 @@ class _HomeContent extends StatelessWidget {
                         ),
                       ),
                     ),
-                    const SizedBox(width: 12),
+                    const SizedBox(width: AppSpacing.card),
                     Expanded(
                       child: SizedBox(
-                        height: 110,
+                        height: 108,
                         child: QuickActionCard(
                           icon: Icons.receipt_long_outlined,
                           label: 'Ver facturas',
@@ -168,24 +170,29 @@ class _HomeContent extends StatelessWidget {
               ),
             ),
             SliverPadding(
-              padding: const EdgeInsets.fromLTRB(20, 28, 20, 0),
-              sliver: SliverToBoxAdapter(
-                child: Text(
-                  'Módulos',
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.page,
+                28,
+                AppSpacing.page,
+                0,
+              ),
+              sliver: const SliverToBoxAdapter(
+                child: SectionHeader(title: 'Módulos'),
               ),
             ),
             SliverPadding(
-              padding: const EdgeInsets.fromLTRB(20, 12, 20, 32),
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.page,
+                AppSpacing.card,
+                AppSpacing.page,
+                32,
+              ),
               sliver: SliverGrid(
                 gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                   crossAxisCount: 2,
-                  mainAxisSpacing: 12,
-                  crossAxisSpacing: 12,
-                  childAspectRatio: 1.35,
+                  mainAxisSpacing: AppSpacing.card,
+                  crossAxisSpacing: AppSpacing.card,
+                  childAspectRatio: 1.38,
                 ),
                 delegate: SliverChildListDelegate([
                   QuickActionCard(
@@ -226,14 +233,20 @@ class _HomeContent extends StatelessWidget {
               ),
             ),
             SliverPadding(
-              padding: const EdgeInsets.fromLTRB(20, 0, 20, 32),
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.page,
+                0,
+                AppSpacing.page,
+                32,
+              ),
               sliver: SliverToBoxAdapter(
                 child: MargeenCard(
                   child: Row(
                     children: [
                       Icon(
-                        Icons.lightbulb_outline,
+                        Icons.insights_outlined,
                         color: theme.colorScheme.primary,
+                        size: 22,
                       ),
                       const SizedBox(width: 12),
                       Expanded(
@@ -241,6 +254,7 @@ class _HomeContent extends StatelessWidget {
                           'Controla tu ganancia en cada factura con el margen en tiempo real.',
                           style: theme.textTheme.bodySmall?.copyWith(
                             color: theme.colorScheme.onSurfaceVariant,
+                            height: 1.4,
                           ),
                         ),
                       ),
@@ -254,5 +268,4 @@ class _HomeContent extends StatelessWidget {
       ),
     );
   }
-
 }

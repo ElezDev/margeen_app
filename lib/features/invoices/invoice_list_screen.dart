@@ -4,10 +4,13 @@ import 'package:go_router/go_router.dart';
 
 import '../../core/auth/auth_provider.dart';
 import '../../core/theme/app_colors.dart';
+import '../../core/theme/app_spacing.dart';
 import '../../shared/utils/formatters.dart';
 import '../../shared/widgets/empty_state.dart';
 import '../../shared/widgets/error_state.dart';
+import '../../shared/widgets/list_tile_icon.dart';
 import '../../shared/widgets/margeen_card.dart';
+import '../../shared/widgets/screen_header.dart';
 import '../../shared/widgets/status_badge.dart';
 import 'invoice_providers.dart';
 
@@ -45,7 +48,6 @@ class _InvoiceListScreenState extends ConsumerState<InvoiceListScreen> {
   Widget build(BuildContext context) {
     final state = ref.watch(invoiceListProvider);
     final user = ref.watch(currentUserProvider);
-    final theme = Theme.of(context);
 
     if (user == null) {
       return const Scaffold(
@@ -53,54 +55,49 @@ class _InvoiceListScreenState extends ConsumerState<InvoiceListScreen> {
       );
     }
 
+    final canCreate = user.can('invoices.create');
+
     return Scaffold(
       body: SafeArea(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 16, 12, 8),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      'Facturas',
-                      style: theme.textTheme.headlineMedium?.copyWith(
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: -0.5,
-                      ),
-                    ),
-                  ),
-                  if (user.can('invoices.create'))
-                    IconButton.filledTonal(
+            ScreenHeader(
+              title: 'Facturas',
+              subtitle: 'Historial y estado de tus ventas',
+              action: canCreate
+                  ? IconButton.filledTonal(
                       onPressed: () => context.push('/invoices/new'),
-                      icon: const Icon(Icons.add),
+                      icon: const Icon(Icons.add_rounded),
                       tooltip: 'Nueva factura',
-                    ),
-                ],
-              ),
+                    )
+                  : null,
             ),
             Expanded(
               child: RefreshIndicator(
                 onRefresh: () =>
                     ref.read(invoiceListProvider.notifier).refresh(),
-                child: _buildBody(context, state),
+                child: _buildBody(context, state, canCreate),
               ),
             ),
           ],
         ),
       ),
-      floatingActionButton: user.can('invoices.create')
+      floatingActionButton: canCreate
           ? FloatingActionButton.extended(
               onPressed: () => context.push('/invoices/new'),
-              icon: const Icon(Icons.add),
+              icon: const Icon(Icons.add_rounded),
               label: const Text('Nueva'),
             )
           : null,
     );
   }
 
-  Widget _buildBody(BuildContext context, InvoiceListState state) {
+  Widget _buildBody(
+    BuildContext context,
+    InvoiceListState state,
+    bool canCreate,
+  ) {
     if (state.isLoading && state.invoices.isEmpty) {
       return const Center(child: CircularProgressIndicator());
     }
@@ -130,11 +127,10 @@ class _InvoiceListScreenState extends ConsumerState<InvoiceListScreen> {
               icon: Icons.receipt_long_outlined,
               title: 'Sin facturas',
               subtitle: 'Crea tu primera factura para empezar',
-              action: ref.read(currentUserProvider)?.can('invoices.create') ==
-                      true
+              action: canCreate
                   ? FilledButton.icon(
                       onPressed: () => context.push('/invoices/new'),
-                      icon: const Icon(Icons.add),
+                      icon: const Icon(Icons.add_rounded),
                       label: const Text('Nueva factura'),
                     )
                   : null,
@@ -147,7 +143,12 @@ class _InvoiceListScreenState extends ConsumerState<InvoiceListScreen> {
     return ListView.builder(
       controller: _scrollController,
       physics: const AlwaysScrollableScrollPhysics(),
-      padding: const EdgeInsets.fromLTRB(20, 8, 20, 88),
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.page,
+        4,
+        AppSpacing.page,
+        AppSpacing.fabClearance,
+      ),
       itemCount: state.invoices.length + (state.isLoadingMore ? 1 : 0),
       itemBuilder: (context, index) {
         if (index >= state.invoices.length) {
@@ -161,21 +162,14 @@ class _InvoiceListScreenState extends ConsumerState<InvoiceListScreen> {
         final theme = Theme.of(context);
 
         return Padding(
-          padding: const EdgeInsets.only(bottom: 12),
+          padding: const EdgeInsets.only(bottom: AppSpacing.card),
           child: MargeenCard(
             onTap: () => context.push('/invoices/${invoice.id}'),
             child: Row(
               children: [
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: AppColors.primary.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: const Icon(
-                    Icons.receipt_outlined,
-                    color: AppColors.primary,
-                  ),
+                ListTileIcon(
+                  icon: Icons.receipt_outlined,
+                  color: AppColors.primary,
                 ),
                 const SizedBox(width: 14),
                 Expanded(
@@ -184,12 +178,10 @@ class _InvoiceListScreenState extends ConsumerState<InvoiceListScreen> {
                     children: [
                       Text(
                         invoice.number,
-                        style: theme.textTheme.titleSmall?.copyWith(
-                          fontWeight: FontWeight.w700,
-                        ),
+                        style: theme.textTheme.titleSmall,
                       ),
                       if (invoice.client != null) ...[
-                        const SizedBox(height: 2),
+                        const SizedBox(height: 3),
                         Text(
                           invoice.client!.name,
                           style: theme.textTheme.bodySmall?.copyWith(
@@ -198,7 +190,7 @@ class _InvoiceListScreenState extends ConsumerState<InvoiceListScreen> {
                         ),
                       ],
                       if (invoice.issuedAt != null) ...[
-                        const SizedBox(height: 2),
+                        const SizedBox(height: 3),
                         Text(
                           formatDateTime(invoice.issuedAt)!,
                           style: theme.textTheme.labelSmall?.copyWith(
@@ -209,6 +201,7 @@ class _InvoiceListScreenState extends ConsumerState<InvoiceListScreen> {
                     ],
                   ),
                 ),
+                const SizedBox(width: 8),
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
