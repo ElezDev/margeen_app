@@ -64,6 +64,7 @@ class _InvoiceListScreenState extends ConsumerState<InvoiceListScreen> {
           children: [
             ScreenHeader(
               title: 'Facturas',
+              showDrawerButton: true,
               subtitle: 'Historial y estado de tus ventas',
               action: canCreate
                   ? IconButton.filledTonal(

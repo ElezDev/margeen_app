@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 
 import '../../core/auth/auth_provider.dart';
-import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/theme/theme_mode_provider.dart';
 import '../../shared/widgets/margeen_card.dart';
@@ -30,7 +28,8 @@ class SettingsScreen extends ConsumerWidget {
           padding: const EdgeInsets.only(bottom: 32),
           children: [
             const ScreenHeader(
-              title: 'Más',
+              title: 'Ajustes',
+              showDrawerButton: true,
               subtitle: 'Cuenta y preferencias',
             ),
             Padding(
@@ -133,139 +132,48 @@ class SettingsScreen extends ConsumerWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Administración',
+                    'Empresa',
                     style: theme.textTheme.labelLarge?.copyWith(
                       color: theme.colorScheme.onSurfaceVariant,
                     ),
                   ),
                   const SizedBox(height: 10),
-                  if (user.can('users.manage')) ...[
-                    MargeenCard(
-                      onTap: () => context.push('/users'),
-                      child: const _SettingsTile(
-                        icon: Icons.manage_accounts_outlined,
-                        title: 'Usuarios',
-                        subtitle: 'Gestionar equipo de ventas',
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-                  ],
                   MargeenCard(
-                    child: _SettingsTile(
-                      icon: Icons.storefront_outlined,
-                      title: user.company?.name ?? 'Empresa',
-                      subtitle: user.company?.document ?? 'Sin documento',
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.storefront_outlined,
+                          color: theme.colorScheme.primary,
+                        ),
+                        const SizedBox(width: 14),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                user.company?.name ?? 'Empresa',
+                                style: theme.textTheme.titleSmall?.copyWith(
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              Text(
+                                user.company?.document ?? 'Sin documento',
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  color: theme.colorScheme.onSurfaceVariant,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ],
               ),
             ),
-            const SizedBox(height: AppSpacing.section),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.page),
-              child: MargeenCard(
-                onTap: () => _confirmLogout(context, ref),
-                child: const _SettingsTile(
-                  icon: Icons.logout_rounded,
-                  title: 'Cerrar sesión',
-                  subtitle: 'Salir de tu cuenta',
-                  iconColor: AppColors.error,
-                  titleColor: AppColors.error,
-                ),
-              ),
-            ),
           ],
         ),
       ),
-    );
-  }
-
-  Future<void> _confirmLogout(BuildContext context, WidgetRef ref) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Cerrar sesión'),
-        content: const Text('¿Seguro que deseas salir?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancelar'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('Salir'),
-          ),
-        ],
-      ),
-    );
-
-    if (confirmed == true) {
-      await ref.read(authProvider.notifier).logout();
-    }
-  }
-}
-
-class _SettingsTile extends StatelessWidget {
-  const _SettingsTile({
-    required this.icon,
-    required this.title,
-    this.subtitle,
-    this.iconColor,
-    this.titleColor,
-  });
-
-  final IconData icon;
-  final String title;
-  final String? subtitle;
-  final Color? iconColor;
-  final Color? titleColor;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    return Row(
-      children: [
-        Container(
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: (iconColor ?? theme.colorScheme.primary)
-                .withValues(alpha: 0.1),
-            borderRadius: BorderRadius.circular(AppRadius.sm),
-          ),
-          child: Icon(
-            icon,
-            size: 20,
-            color: iconColor ?? theme.colorScheme.primary,
-          ),
-        ),
-        const SizedBox(width: 14),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                title,
-                style: theme.textTheme.titleSmall?.copyWith(
-                  color: titleColor,
-                ),
-              ),
-              if (subtitle != null)
-                Text(
-                  subtitle!,
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
-                  ),
-                ),
-            ],
-          ),
-        ),
-        if (titleColor == null)
-          Icon(
-            Icons.chevron_right_rounded,
-            color: theme.colorScheme.onSurfaceVariant,
-          ),
-      ],
     );
   }
 }

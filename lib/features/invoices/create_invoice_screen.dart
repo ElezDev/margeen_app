@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../core/api/api_exception.dart';
 import '../../core/theme/app_colors.dart';
+import '../../core/theme/app_spacing.dart';
 import '../../data/client_repository.dart';
 import '../../data/invoice_repository.dart';
 import '../../data/product_repository.dart';
@@ -16,6 +17,21 @@ import '../../shared/widgets/profit_banner.dart';
 import '../../shared/widgets/search_picker_field.dart';
 import 'invoice_providers.dart';
 
+class _DraftLineItem {
+  const _DraftLineItem({
+    required this.input,
+    required this.title,
+    required this.subtitle,
+  });
+
+  final CreateInvoiceItemInput input;
+  final String title;
+  final String subtitle;
+
+  num get lineTotal => input.quantity * input.unitPrice;
+  num get lineProfit => input.quantity * (input.unitPrice - input.unitCost);
+}
+
 class CreateInvoiceScreen extends ConsumerStatefulWidget {
   const CreateInvoiceScreen({super.key});
 
@@ -26,7 +42,7 @@ class CreateInvoiceScreen extends ConsumerStatefulWidget {
 
 class _CreateInvoiceScreenState extends ConsumerState<CreateInvoiceScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _quantityController = TextEditingController(text: '10');
+  final _quantityController = TextEditingController(text: '1');
   final _unitPriceController = TextEditingController();
   final _unitCostController = TextEditingController();
   final _discountController = TextEditingController(text: '0');
@@ -38,6 +54,7 @@ class _CreateInvoiceScreenState extends ConsumerState<CreateInvoiceScreen> {
   Product? _selectedProduct;
   bool _useCatalogProduct = true;
   bool _isSubmitting = false;
+  final List<_DraftLineItem> _items = [];
 
   @override
   void dispose() {
@@ -58,25 +75,18 @@ class _CreateInvoiceScreenState extends ConsumerState<CreateInvoiceScreen> {
     _unitCostController.text = product.costNum.toStringAsFixed(0);
   }
 
-  num get _previewTotal {
-    final qty = _parseNum(_quantityController.text);
-    final price = _parseNum(_unitPriceController.text);
-    final discount = _parseNum(_discountController.text);
-    return (qty * price) - discount;
-  }
+  num get _subtotal =>
+      _items.fold<num>(0, (sum, item) => sum + item.lineTotal);
 
-  num get _previewProfit {
-    final qty = _parseNum(_quantityController.text);
-    final price = _parseNum(_unitPriceController.text);
-    final cost = _parseNum(_unitCostController.text);
-    return qty * (price - cost);
-  }
+  num get _previewTotal =>
+      _subtotal - _parseNum(_discountController.text);
+
+  num get _previewProfit =>
+      _items.fold<num>(0, (sum, item) => sum + item.lineProfit);
 
   int get _previewMargin {
-    final sales = _parseNum(_quantityController.text) *
-        _parseNum(_unitPriceController.text);
-    if (sales <= 0) return 0;
-    return ((_previewProfit / sales) * 100).round();
+    if (_subtotal <= 0) return 0;
+    return ((_previewProfit / _subtotal) * 100).round();
   }
 
   Future<Client?> _pickClient() {
@@ -113,43 +123,107 @@ class _CreateInvoiceScreenState extends ConsumerState<CreateInvoiceScreen> {
     );
   }
 
-  CreateInvoiceItemInput? _buildLineItem() {
+  String? _validateItemForm() {
     final qty = _parseNum(_quantityController.text);
     final price = _parseNum(_unitPriceController.text);
     final cost = _parseNum(_unitCostController.text);
 
+    if (qty <= 0) return 'Ingresa una cantidad válida';
+    if (price <= 0) return 'Ingresa el precio de venta';
+
     if (_useCatalogProduct) {
-      if (_selectedProduct == null) return null;
-      return CreateInvoiceItemInput(
-        productId: _selectedProduct!.id,
-        quantity: qty,
-        unitPrice: price,
-        unitCost: cost,
+      if (_selectedProduct == null) return 'Selecciona un producto';
+      if (cost <= 0) return 'Ingresa el costo unitario';
+      return null;
+    }
+
+    final description = _manualDescriptionController.text.trim();
+    final unit = _manualUnitController.text.trim();
+    if (description.isEmpty) return 'Ingresa la descripción';
+    if (unit.isEmpty) return 'Ingresa la unidad';
+    if (cost < 0) return 'Costo inválido';
+
+    return null;
+  }
+
+  _DraftLineItem? _buildDraftItem() {
+    final error = _validateItemForm();
+    if (error != null) return null;
+
+    final qty = _parseNum(_quantityController.text);
+    final price = _parseNum(_unitPriceController.text);
+    final cost = _parseNum(_unitCostController.text);
+
+    if (_useCatalogProduct && _selectedProduct != null) {
+      final product = _selectedProduct!;
+      return _DraftLineItem(
+        input: CreateInvoiceItemInput(
+          productId: product.id,
+          quantity: qty,
+          unitPrice: price,
+          unitCost: cost,
+        ),
+        title: product.name,
+        subtitle: '${product.unit} · ${qty.toString()} × ${formatCurrencyNum(price)}',
       );
     }
 
     final description = _manualDescriptionController.text.trim();
     final unit = _manualUnitController.text.trim();
-    if (description.isEmpty || unit.isEmpty) return null;
-
-    return CreateInvoiceItemInput(
-      description: description,
-      unit: unit,
-      quantity: qty,
-      unitPrice: price,
-      unitCost: cost,
+    return _DraftLineItem(
+      input: CreateInvoiceItemInput(
+        description: description,
+        unit: unit,
+        quantity: qty,
+        unitPrice: price,
+        unitCost: cost,
+      ),
+      title: description,
+      subtitle: '$unit · ${qty.toString()} × ${formatCurrencyNum(price)}',
     );
+  }
+
+  void _clearItemForm() {
+    _selectedProduct = null;
+    _quantityController.text = '1';
+    _unitPriceController.clear();
+    _unitCostController.clear();
+    _manualDescriptionController.clear();
+    _manualUnitController.text = 'unidad';
+  }
+
+  void _addItem() {
+    final draft = _buildDraftItem();
+    if (draft == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(_validateItemForm() ?? 'Completa el ítem')),
+      );
+      return;
+    }
+
+    setState(() {
+      _items.add(draft);
+      _clearItemForm();
+    });
+  }
+
+  void _removeItem(int index) {
+    setState(() => _items.removeAt(index));
   }
 
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
 
-    final lineItem = _buildLineItem();
-    if (_selectedClient == null || lineItem == null) {
+    if (_selectedClient == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Completa cliente y producto antes de crear.'),
-        ),
+        const SnackBar(content: Text('Selecciona un cliente.')),
+      );
+      return;
+    }
+
+    if (_items.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Agrega al menos un ítem a la factura.')),
       );
       return;
     }
@@ -162,7 +236,7 @@ class _CreateInvoiceScreenState extends ConsumerState<CreateInvoiceScreen> {
       notes: _notesController.text.trim().isEmpty
           ? null
           : _notesController.text.trim(),
-      items: [lineItem],
+      items: _items.map((e) => e.input).toList(),
     );
 
     try {
@@ -200,7 +274,7 @@ class _CreateInvoiceScreenState extends ConsumerState<CreateInvoiceScreen> {
       body: Form(
         key: _formKey,
         child: ListView(
-          padding: const EdgeInsets.all(20),
+          padding: const EdgeInsets.all(AppSpacing.page),
           children: [
             Text(
               'Cliente',
@@ -219,9 +293,75 @@ class _CreateInvoiceScreenState extends ConsumerState<CreateInvoiceScreen> {
               onChanged: (client) => setState(() => _selectedClient = client),
               validator: (v) => v == null ? 'Selecciona un cliente' : null,
             ),
-            const SizedBox(height: 24),
+            if (_items.isNotEmpty) ...[
+              const SizedBox(height: AppSpacing.section),
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      'Ítems (${_items.length})',
+                      style: theme.textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                  Text(
+                    formatCurrencyNum(_subtotal),
+                    style: theme.textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.w800,
+                      color: AppColors.primary,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              ...List.generate(_items.length, (index) {
+                final item = _items[index];
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: AppSpacing.card),
+                  child: MargeenCard(
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                item.title,
+                                style: theme.textTheme.titleSmall,
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                item.subtitle,
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  color: theme.colorScheme.onSurfaceVariant,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          formatCurrencyNum(item.lineTotal),
+                          style: theme.textTheme.titleSmall?.copyWith(
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.close_rounded, size: 20),
+                          tooltip: 'Quitar ítem',
+                          onPressed: () => _removeItem(index),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              }),
+            ],
+            const SizedBox(height: AppSpacing.section),
             Text(
-              'Producto',
+              _items.isEmpty ? 'Agregar ítem' : 'Agregar otro ítem',
               style: theme.textTheme.titleSmall?.copyWith(
                 fontWeight: FontWeight.w700,
               ),
@@ -260,24 +400,16 @@ class _CreateInvoiceScreenState extends ConsumerState<CreateInvoiceScreen> {
                   _selectedProduct = product;
                   if (product != null) _applyProductPrices(product);
                 }),
-                validator: (v) =>
-                    _useCatalogProduct && v == null
-                        ? 'Selecciona un producto'
-                        : null,
               )
             else ...[
               TextFormField(
                 controller: _manualDescriptionController,
                 decoration: const InputDecoration(labelText: 'Descripción'),
-                validator: (v) =>
-                    v == null || v.trim().isEmpty ? 'Requerido' : null,
               ),
               const SizedBox(height: 12),
               TextFormField(
                 controller: _manualUnitController,
                 decoration: const InputDecoration(labelText: 'Unidad'),
-                validator: (v) =>
-                    v == null || v.trim().isEmpty ? 'Requerido' : null,
               ),
             ],
             const SizedBox(height: 16),
@@ -289,8 +421,6 @@ class _CreateInvoiceScreenState extends ConsumerState<CreateInvoiceScreen> {
                     keyboardType: TextInputType.number,
                     decoration: const InputDecoration(labelText: 'Cantidad'),
                     onChanged: (_) => setState(() {}),
-                    validator: (v) =>
-                        _parseNum(v ?? '') <= 0 ? 'Inválida' : null,
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -303,8 +433,6 @@ class _CreateInvoiceScreenState extends ConsumerState<CreateInvoiceScreen> {
                       prefixText: r'$ ',
                     ),
                     onChanged: (_) => setState(() {}),
-                    validator: (v) =>
-                        _parseNum(v ?? '') <= 0 ? 'Requerido' : null,
                   ),
                 ),
               ],
@@ -318,15 +446,21 @@ class _CreateInvoiceScreenState extends ConsumerState<CreateInvoiceScreen> {
                 prefixText: r'$ ',
               ),
               onChanged: (_) => setState(() {}),
-              validator: (v) {
-                if (_parseNum(v ?? '') < 0) return 'Inválido';
-                if (_useCatalogProduct && _parseNum(v ?? '') <= 0) {
-                  return 'Requerido';
-                }
-                return null;
-              },
             ),
             const SizedBox(height: 12),
+            OutlinedButton.icon(
+              onPressed: _addItem,
+              icon: const Icon(Icons.add_rounded),
+              label: Text(_items.isEmpty ? 'Agregar ítem' : 'Agregar otro ítem'),
+            ),
+            const SizedBox(height: AppSpacing.section),
+            Text(
+              'Totales',
+              style: theme.textTheme.titleSmall?.copyWith(
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            const SizedBox(height: 8),
             TextFormField(
               controller: _discountController,
               keyboardType: TextInputType.number,
@@ -343,7 +477,7 @@ class _CreateInvoiceScreenState extends ConsumerState<CreateInvoiceScreen> {
               decoration: const InputDecoration(labelText: 'Notas'),
             ),
             const SizedBox(height: 20),
-            if (_previewTotal > 0 && _parseNum(_unitPriceController.text) > 0)
+            if (_items.isNotEmpty && _previewTotal > 0)
               ProfitBanner(
                 totalProfit: _previewProfit.toString(),
                 marginPercent: _previewMargin,
@@ -373,7 +507,11 @@ class _CreateInvoiceScreenState extends ConsumerState<CreateInvoiceScreen> {
                       width: 20,
                       child: CircularProgressIndicator(strokeWidth: 2),
                     )
-                  : const Text('Crear factura'),
+                  : Text(
+                      _items.isEmpty
+                          ? 'Crear factura'
+                          : 'Crear factura (${_items.length} ítems)',
+                    ),
             ),
           ],
         ),

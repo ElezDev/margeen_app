@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../core/theme/app_spacing.dart';
+import 'app_navigation.dart';
 
 class ScreenHeader extends StatelessWidget {
   const ScreenHeader({
@@ -8,11 +9,13 @@ class ScreenHeader extends StatelessWidget {
     required this.title,
     this.subtitle,
     this.action,
+    this.showDrawerButton = false,
   });
 
   final String title;
   final String? subtitle;
   final Widget? action;
+  final bool showDrawerButton;
 
   @override
   Widget build(BuildContext context) {
@@ -28,6 +31,13 @@ class ScreenHeader extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          if (showDrawerButton) ...[
+            const Padding(
+              padding: EdgeInsets.only(top: 2),
+              child: DrawerMenuButton(),
+            ),
+            const SizedBox(width: 4),
+          ],
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,

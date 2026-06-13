@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/auth/auth_provider.dart';
+import 'app_drawer.dart';
+import 'app_navigation.dart';
 
 class AppShell extends ConsumerWidget {
   const AppShell({super.key, required this.navigationShell});
@@ -26,8 +28,11 @@ class AppShell extends ConsumerWidget {
     }
 
     final theme = Theme.of(context);
+    final scaffoldKey = ref.watch(rootScaffoldKeyProvider);
 
     return Scaffold(
+      key: scaffoldKey,
+      drawer: const AppDrawer(),
       body: navigationShell,
       bottomNavigationBar: DecoratedBox(
         decoration: BoxDecoration(
@@ -45,9 +50,9 @@ class AppShell extends ConsumerWidget {
             onDestinationSelected: _onDestinationSelected,
             destinations: const [
               NavigationDestination(
-                icon: Icon(Icons.home_outlined),
-                selectedIcon: Icon(Icons.home_rounded),
-                label: 'Inicio',
+                icon: Icon(Icons.bar_chart_outlined),
+                selectedIcon: Icon(Icons.bar_chart_rounded),
+                label: 'Reportes',
               ),
               NavigationDestination(
                 icon: Icon(Icons.receipt_long_outlined),
@@ -55,9 +60,9 @@ class AppShell extends ConsumerWidget {
                 label: 'Facturas',
               ),
               NavigationDestination(
-                icon: Icon(Icons.more_horiz_rounded),
-                selectedIcon: Icon(Icons.more_horiz),
-                label: 'Más',
+                icon: Icon(Icons.tune_outlined),
+                selectedIcon: Icon(Icons.tune),
+                label: 'Ajustes',
               ),
             ],
           ),

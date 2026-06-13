@@ -4,144 +4,105 @@ int _jsonInt(dynamic value) {
   return int.tryParse(value?.toString() ?? '') ?? 0;
 }
 
-String _jsonString(dynamic value, {String fallback = '0'}) {
-  if (value == null) return fallback;
-  return value.toString();
+num _jsonNum(dynamic value) {
+  if (value is num) return value;
+  return num.tryParse(value?.toString() ?? '') ?? 0;
 }
 
 class DashboardReport {
   const DashboardReport({
-    required this.periodFrom,
-    required this.periodTo,
-    required this.summary,
+    required this.period,
+    required this.dayStats,
+    required this.monthStats,
     required this.topClients,
-    required this.topProducts,
-    required this.recentInvoices,
   });
 
-  final String periodFrom;
-  final String periodTo;
-  final DashboardSummary summary;
-  final List<TopClient> topClients;
-  final List<TopProduct> topProducts;
-  final List<RecentInvoice> recentInvoices;
+  final DashboardPeriod period;
+  final DashboardStats dayStats;
+  final DashboardStats monthStats;
+  final List<DashboardTopClient> topClients;
 
   factory DashboardReport.fromJson(Map<String, dynamic> json) {
     final data = json['data'] as Map<String, dynamic>? ?? json;
-    final period = data['period'] as Map<String, dynamic>? ?? {};
+    final periodData =
+        data['periodo_consultado'] as Map<String, dynamic>? ?? {};
+
     return DashboardReport(
-      periodFrom: period['from']?.toString() ?? '',
-      periodTo: period['to']?.toString() ?? '',
-      summary: DashboardSummary.fromJson(
-        data['summary'] as Map<String, dynamic>? ?? {},
+      period: DashboardPeriod.fromJson(periodData),
+      dayStats: DashboardStats.fromJson(
+        data['del_dia'] as Map<String, dynamic>? ?? {},
       ),
-      topClients: (data['top_clients'] as List<dynamic>? ?? [])
-          .map((e) => TopClient.fromJson(e as Map<String, dynamic>))
-          .toList(),
-      topProducts: (data['top_products'] as List<dynamic>? ?? [])
-          .map((e) => TopProduct.fromJson(e as Map<String, dynamic>))
-          .toList(),
-      recentInvoices: (data['recent_invoices'] as List<dynamic>? ?? [])
-          .map((e) => RecentInvoice.fromJson(e as Map<String, dynamic>))
+      monthStats: DashboardStats.fromJson(
+        data['del_mes_completo'] as Map<String, dynamic>? ?? {},
+      ),
+      topClients: (data['top_clientes_del_mes'] as List<dynamic>? ?? [])
+          .map((e) => DashboardTopClient.fromJson(e as Map<String, dynamic>))
           .toList(),
     );
   }
 }
 
-class DashboardSummary {
-  const DashboardSummary({
-    required this.invoiceCount,
-    required this.totalSales,
-    required this.totalProfit,
-    required this.profitMarginPercent,
+class DashboardPeriod {
+  const DashboardPeriod({
+    required this.day,
+    required this.monthLabel,
   });
 
-  final int invoiceCount;
-  final String totalSales;
-  final String totalProfit;
-  final int profitMarginPercent;
+  final String day;
+  final String monthLabel;
 
-  factory DashboardSummary.fromJson(Map<String, dynamic> json) {
-    return DashboardSummary(
-      invoiceCount: _jsonInt(json['invoice_count']),
-      totalSales: _jsonString(json['total_sales']),
-      totalProfit: _jsonString(json['total_profit']),
-      profitMarginPercent: _jsonInt(json['profit_margin_percent']),
+  factory DashboardPeriod.fromJson(Map<String, dynamic> json) {
+    return DashboardPeriod(
+      day: json['dia']?.toString() ?? '',
+      monthLabel: json['mes_correspondiente']?.toString() ?? '',
     );
   }
 }
 
-class TopClient {
-  const TopClient({
+class DashboardStats {
+  const DashboardStats({
+    required this.totalSales,
+    required this.totalProfit,
+    required this.pendingCollection,
+    required this.invoiceCount,
+  });
+
+  final num totalSales;
+  final num totalProfit;
+  final num pendingCollection;
+  final int invoiceCount;
+
+  int get profitMarginPercent {
+    if (totalSales <= 0) return 0;
+    return ((totalProfit / totalSales) * 100).round();
+  }
+
+  factory DashboardStats.fromJson(Map<String, dynamic> json) {
+    return DashboardStats(
+      totalSales: _jsonNum(json['ventas_totales']),
+      totalProfit: _jsonNum(json['ganancias_totales']),
+      pendingCollection: _jsonNum(json['pendiente_por_cobrar']),
+      invoiceCount: _jsonInt(json['total_facturas']),
+    );
+  }
+}
+
+class DashboardTopClient {
+  const DashboardTopClient({
     required this.clientId,
     required this.clientName,
-    required this.totalSales,
-    required this.invoiceCount,
+    required this.totalPurchased,
   });
 
   final int clientId;
   final String clientName;
-  final String totalSales;
-  final int invoiceCount;
+  final num totalPurchased;
 
-  factory TopClient.fromJson(Map<String, dynamic> json) {
-    return TopClient(
+  factory DashboardTopClient.fromJson(Map<String, dynamic> json) {
+    return DashboardTopClient(
       clientId: _jsonInt(json['client_id']),
       clientName: json['client_name'] as String? ?? '',
-      totalSales: _jsonString(json['total_sales']),
-      invoiceCount: _jsonInt(json['invoice_count']),
-    );
-  }
-}
-
-class TopProduct {
-  const TopProduct({
-    required this.productId,
-    required this.description,
-    required this.totalQuantity,
-    required this.totalSales,
-    required this.totalProfit,
-  });
-
-  final int productId;
-  final String description;
-  final String totalQuantity;
-  final String totalSales;
-  final String totalProfit;
-
-  factory TopProduct.fromJson(Map<String, dynamic> json) {
-    return TopProduct(
-      productId: _jsonInt(json['product_id']),
-      description: json['description'] as String? ?? '',
-      totalQuantity: _jsonString(json['total_quantity']),
-      totalSales: _jsonString(json['total_sales']),
-      totalProfit: _jsonString(json['total_profit']),
-    );
-  }
-}
-
-class RecentInvoice {
-  const RecentInvoice({
-    required this.id,
-    required this.number,
-    required this.clientName,
-    required this.total,
-    required this.totalProfit,
-  });
-
-  final int id;
-  final String number;
-  final String clientName;
-  final String total;
-  final String totalProfit;
-
-  factory RecentInvoice.fromJson(Map<String, dynamic> json) {
-    return RecentInvoice(
-      id: _jsonInt(json['id']),
-      number: json['number'] as String? ?? '',
-      clientName: json['client_name'] as String? ?? '',
-      total: _jsonString(json['total']),
-      totalProfit: _jsonString(json['total_profit']),
+      totalPurchased: _jsonNum(json['total_comprado']),
     );
   }
 }

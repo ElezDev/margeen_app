@@ -219,7 +219,7 @@ class _HomeContent extends StatelessWidget {
                     color: AppColors.secondary,
                     enabled: user.can('reports.view'),
                     onTap: user.can('reports.view')
-                        ? () => context.push('/reports')
+                        ? () => context.go('/')
                         : null,
                   ),
                   if (user.can('users.manage'))

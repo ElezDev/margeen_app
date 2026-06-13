@@ -10,13 +10,12 @@ class ReportRepository {
 
   final Dio _dio;
 
-  Future<DashboardReport> dashboard({String? from, String? to}) async {
+  Future<DashboardReport> dashboard({String? day}) async {
     try {
       final response = await _dio.get(
         '/reports/dashboard',
         queryParameters: {
-          if (from != null && from.isNotEmpty) 'from': from,
-          if (to != null && to.isNotEmpty) 'to': to,
+          if (day != null && day.isNotEmpty) 'dia': day,
         },
       );
       final body = response.data;

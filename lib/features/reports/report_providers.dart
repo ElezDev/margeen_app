@@ -1,30 +1,18 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 
 import '../../data/report_repository.dart';
 import '../../shared/models/dashboard_report.dart';
 
-final dashboardReportProvider =
-    FutureProvider.family<DashboardReport, ReportPeriod>((ref, period) {
-  return ref.read(reportRepositoryProvider).dashboard(
-        from: period.from,
-        to: period.to,
-      );
-});
+enum DashboardScope { day, month }
 
-class ReportPeriod {
-  const ReportPeriod({this.from, this.to});
+final dashboardScopeProvider =
+    StateProvider<DashboardScope>((ref) => DashboardScope.day);
 
-  final String? from;
-  final String? to;
+final dashboardDateProvider = StateProvider<DateTime>((ref) => DateTime.now());
 
-  @override
-  bool operator ==(Object other) =>
-      other is ReportPeriod && other.from == from && other.to == to;
-
-  @override
-  int get hashCode => Object.hash(from, to);
-}
-
-final currentReportPeriodProvider = StateProvider<ReportPeriod>((ref) {
-  return const ReportPeriod();
+final dashboardReportProvider = FutureProvider<DashboardReport>((ref) {
+  final date = ref.watch(dashboardDateProvider);
+  final day = DateFormat('yyyy-MM-dd').format(date);
+  return ref.read(reportRepositoryProvider).dashboard(day: day);
 });
