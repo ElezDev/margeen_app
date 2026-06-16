@@ -22,8 +22,8 @@ class InvoiceClient {
 
   factory InvoiceClient.fromJson(Map<String, dynamic> json) {
     return InvoiceClient(
-      id: json['id'] as int,
-      name: json['name'] as String,
+      id: _jsonInt(json['id']),
+      name: json['name'] as String? ?? '',
       phone: json['phone'] as String?,
     );
   }
@@ -37,8 +37,8 @@ class InvoiceSeller {
 
   factory InvoiceSeller.fromJson(Map<String, dynamic> json) {
     return InvoiceSeller(
-      id: json['id'] as int,
-      name: json['name'] as String,
+      id: _jsonInt(json['id']),
+      name: json['name'] as String? ?? '',
     );
   }
 }
@@ -69,8 +69,8 @@ class InvoiceItem {
   factory InvoiceItem.fromJson(Map<String, dynamic> json) {
     return InvoiceItem(
       id: _jsonInt(json['id']),
-      productId: json['product_id'] as int?,
-      description: json['description'] as String,
+      productId: json['product_id'] != null ? _jsonInt(json['product_id']) : null,
+      description: json['description'] as String? ?? '',
       quantity: _jsonString(json['quantity']),
       unit: json['unit'] as String,
       unitPrice: _jsonString(json['unit_price']),
@@ -94,6 +94,7 @@ class Invoice {
     required this.profitMarginPercent,
     this.notes,
     this.pdfUrl,
+    this.pdfPath,
     this.issuedAt,
     this.client,
     this.seller,
@@ -111,6 +112,7 @@ class Invoice {
   final int profitMarginPercent;
   final String? notes;
   final String? pdfUrl;
+  final String? pdfPath;
   final String? issuedAt;
   final InvoiceClient? client;
   final InvoiceSeller? seller;
@@ -118,12 +120,17 @@ class Invoice {
 
   bool get isCancelled => status == 'cancelled';
   bool get isIssued => status == 'issued';
+  bool get isDraft => status == 'draft';
+  bool get canBeCancelled => !isCancelled;
+  bool get hasPdf =>
+      (pdfUrl != null && pdfUrl!.isNotEmpty) ||
+      (pdfPath != null && pdfPath!.isNotEmpty);
 
   factory Invoice.fromJson(Map<String, dynamic> json) {
     return Invoice(
       id: _jsonInt(json['id']),
-      number: json['number'] as String,
-      status: json['status'] as String,
+      number: json['number'] as String? ?? '',
+      status: json['status'] as String? ?? 'draft',
       subtotal: _jsonString(json['subtotal']),
       discount: _jsonString(json['discount']),
       total: _jsonString(json['total']),
@@ -132,6 +139,7 @@ class Invoice {
       profitMarginPercent: _jsonInt(json['profit_margin_percent']),
       notes: json['notes'] as String?,
       pdfUrl: json['pdf_url'] as String?,
+      pdfPath: json['pdf_path'] as String?,
       issuedAt: json['issued_at'] as String?,
       client: json['client'] != null
           ? InvoiceClient.fromJson(json['client'] as Map<String, dynamic>)

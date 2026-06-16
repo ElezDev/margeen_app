@@ -11,6 +11,7 @@ import '../../shared/widgets/error_state.dart';
 import '../../shared/widgets/list_tile_icon.dart';
 import '../../shared/widgets/margeen_card.dart';
 import '../../shared/widgets/screen_header.dart';
+import '../../shared/widgets/subtle_fab.dart';
 import '../../shared/widgets/status_badge.dart';
 import 'invoice_providers.dart';
 
@@ -67,10 +68,13 @@ class _InvoiceListScreenState extends ConsumerState<InvoiceListScreen> {
               showDrawerButton: true,
               subtitle: 'Historial y estado de tus ventas',
               action: canCreate
-                  ? IconButton.filledTonal(
+                  ? IconButton(
                       onPressed: () => context.push('/invoices/new'),
                       icon: const Icon(Icons.add_rounded),
                       tooltip: 'Nueva factura',
+                      style: IconButton.styleFrom(
+                        foregroundColor: Theme.of(context).colorScheme.primary,
+                      ),
                     )
                   : null,
             ),
@@ -85,12 +89,13 @@ class _InvoiceListScreenState extends ConsumerState<InvoiceListScreen> {
         ),
       ),
       floatingActionButton: canCreate
-          ? FloatingActionButton.extended(
+          ? SubtleExtendedFab(
+              heroTag: 'invoice_new',
+              label: 'Nueva',
               onPressed: () => context.push('/invoices/new'),
-              icon: const Icon(Icons.add_rounded),
-              label: const Text('Nueva'),
             )
           : null,
+      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
     );
   }
 

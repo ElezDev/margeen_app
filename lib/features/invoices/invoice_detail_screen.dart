@@ -121,7 +121,7 @@ class _InvoiceDetailScreenState extends ConsumerState<InvoiceDetailScreen> {
 
     final cancelAction = invoiceAsync.maybeWhen(
       data: (invoice) =>
-          user.can('invoices.cancel') && invoice.isIssued ? invoice : null,
+          user.can('invoices.cancel') && invoice.canBeCancelled ? invoice : null,
       orElse: () => null,
     );
 
@@ -170,7 +170,10 @@ class _InvoiceDetailScreenState extends ConsumerState<InvoiceDetailScreen> {
           invoice: invoice,
           theme: theme,
           isSharingPdf: _isSharingPdf,
+          isCancelling: _isCancelling,
+          canCancel: user.can('invoices.cancel') && invoice.canBeCancelled,
           onSharePdf: () => _sharePdf(invoice),
+          onCancel: () => _cancelInvoice(invoice),
         ),
       ),
     );
@@ -182,13 +185,19 @@ class _InvoiceDetailBody extends StatelessWidget {
     required this.invoice,
     required this.theme,
     required this.isSharingPdf,
+    required this.isCancelling,
+    required this.canCancel,
     required this.onSharePdf,
+    required this.onCancel,
   });
 
   final Invoice invoice;
   final ThemeData theme;
   final bool isSharingPdf;
+  final bool isCancelling;
+  final bool canCancel;
   final VoidCallback onSharePdf;
+  final VoidCallback onCancel;
 
   @override
   Widget build(BuildContext context) {
@@ -214,7 +223,7 @@ class _InvoiceDetailBody extends StatelessWidget {
           ),
         if (invoice.isCancelled) const SizedBox(height: 12),
         ProfitBanner(
-          totalProfit: invoice.totalProfit,
+          totalProfit: parseAmount(invoice.totalProfit),
           marginPercent: invoice.profitMarginPercent,
         ),
         const SizedBox(height: 16),
@@ -269,7 +278,7 @@ class _InvoiceDetailBody extends StatelessWidget {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        '${item.quantity} ${item.unit} × ${formatCurrency(item.unitPrice)}',
+                        '${formatQuantity(item.quantity)} ${item.unit} × ${formatCurrency(item.unitPrice)}',
                         style: theme.textTheme.bodySmall,
                       ),
                       const SizedBox(height: 4),
@@ -320,23 +329,43 @@ class _InvoiceDetailBody extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 24),
-        FilledButton.icon(
-          onPressed: isSharingPdf ? null : onSharePdf,
-          icon: isSharingPdf
-              ? const SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    color: Colors.white,
-                  ),
-                )
-              : const Icon(Icons.picture_as_pdf_outlined),
-          label: const Text('Compartir PDF'),
-          style: FilledButton.styleFrom(
-            minimumSize: const Size.fromHeight(48),
+        if (invoice.hasPdf)
+          FilledButton.icon(
+            onPressed: isSharingPdf ? null : onSharePdf,
+            icon: isSharingPdf
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Colors.white,
+                    ),
+                  )
+                : const Icon(Icons.picture_as_pdf_outlined),
+            label: const Text('Compartir PDF'),
+            style: FilledButton.styleFrom(
+              minimumSize: const Size.fromHeight(48),
+            ),
           ),
-        ),
+        if (canCancel) ...[
+          if (invoice.hasPdf) const SizedBox(height: 12),
+          OutlinedButton.icon(
+            onPressed: isCancelling ? null : onCancel,
+            icon: isCancelling
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Icon(Icons.cancel_outlined),
+            label: const Text('Anular factura'),
+            style: OutlinedButton.styleFrom(
+              minimumSize: const Size.fromHeight(48),
+              foregroundColor: AppColors.error,
+              side: const BorderSide(color: AppColors.error),
+            ),
+          ),
+        ],
       ],
     );
   }

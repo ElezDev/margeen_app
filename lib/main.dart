@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/date_symbol_data_local.dart';
 
 import 'core/auth/auth_provider.dart';
 import 'core/auth/session_expired_handler.dart';
@@ -11,6 +12,7 @@ import 'core/theme/theme_mode_provider.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await initializeDateFormatting('es_CO', null);
   runApp(const ProviderScope(child: MargeenApp()));
 }
 
@@ -25,14 +27,18 @@ class _MargeenAppState extends ConsumerState<MargeenApp> {
   @override
   void initState() {
     super.initState();
+    final authNotifier = ref.read(authProvider.notifier);
     ref.read(sessionExpiredHandlerProvider).onExpired =
-        () => ref.read(authProvider.notifier).sessionExpired();
+        authNotifier.sessionExpired;
     Future.microtask(_bootstrap);
   }
 
   Future<void> _bootstrap() async {
-    await ref.read(themeModeProvider.notifier).initialize();
-    await ref.read(authProvider.notifier).bootstrap();
+    final themeNotifier = ref.read(themeModeProvider.notifier);
+    final authNotifier = ref.read(authProvider.notifier);
+    await themeNotifier.initialize();
+    if (!mounted) return;
+    await authNotifier.bootstrap();
   }
 
   @override

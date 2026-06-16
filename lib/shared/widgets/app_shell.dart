@@ -50,9 +50,9 @@ class AppShell extends ConsumerWidget {
             onDestinationSelected: _onDestinationSelected,
             destinations: const [
               NavigationDestination(
-                icon: Icon(Icons.bar_chart_outlined),
-                selectedIcon: Icon(Icons.bar_chart_rounded),
-                label: 'Reportes',
+                icon: Icon(Icons.home_outlined),
+                selectedIcon: Icon(Icons.home_rounded),
+                label: 'Inicio',
               ),
               NavigationDestination(
                 icon: Icon(Icons.receipt_long_outlined),

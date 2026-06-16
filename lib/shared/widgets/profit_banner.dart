@@ -11,7 +11,7 @@ class ProfitBanner extends StatelessWidget {
     required this.marginPercent,
   });
 
-  final String totalProfit;
+  final num totalProfit;
   final int marginPercent;
 
   @override
@@ -60,7 +60,7 @@ class ProfitBanner extends StatelessWidget {
                   ),
                 ),
                 Text(
-                  formatCurrency(totalProfit),
+                  formatCurrencyNum(totalProfit),
                   style: theme.textTheme.headlineSmall?.copyWith(
                     fontWeight: FontWeight.w800,
                     color: profitColor,

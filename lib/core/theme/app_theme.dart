@@ -153,12 +153,18 @@ abstract final class AppTheme {
         ),
       ),
       floatingActionButtonTheme: FloatingActionButtonThemeData(
-        backgroundColor: AppColors.primary,
-        foregroundColor: Colors.white,
-        elevation: 3,
-        highlightElevation: 6,
+        elevation: 0,
+        highlightElevation: 0,
+        focusElevation: 0,
+        hoverElevation: 0,
+        backgroundColor: colorScheme.surfaceContainerLow,
+        foregroundColor: AppColors.primary,
+        extendedPadding: const EdgeInsets.symmetric(horizontal: 18),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppRadius.md),
+          side: BorderSide(
+            color: colorScheme.outlineVariant.withValues(alpha: 0.55),
+          ),
         ),
       ),
       navigationBarTheme: NavigationBarThemeData(

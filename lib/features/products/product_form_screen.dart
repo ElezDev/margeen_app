@@ -6,6 +6,7 @@ import '../../core/api/api_exception.dart';
 import '../../core/auth/auth_provider.dart';
 import '../../data/product_repository.dart';
 import '../../shared/models/product.dart';
+import '../../shared/utils/formatters.dart';
 import 'product_providers.dart';
 
 class ProductFormScreen extends ConsumerStatefulWidget {
@@ -199,9 +200,8 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
           TextFormField(
             controller: _costController,
             keyboardType: TextInputType.number,
-            decoration: const InputDecoration(
-              labelText: 'Precio costo',
-              prefixText: r'$ ',
+            decoration: currencyInputDecoration(
+              labelText: 'Precio costo (COP)',
             ),
             validator: (v) => _parseNum(v ?? '') < 0 ? 'Inválido' : null,
           ),
@@ -209,9 +209,8 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
           TextFormField(
             controller: _saleController,
             keyboardType: TextInputType.number,
-            decoration: const InputDecoration(
-              labelText: 'Precio venta',
-              prefixText: r'$ ',
+            decoration: currencyInputDecoration(
+              labelText: 'Precio venta (COP)',
             ),
             validator: (v) {
               if (_parseNum(v ?? '') <= 0) return 'Requerido';

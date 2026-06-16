@@ -12,29 +12,33 @@ class AppDrawer extends ConsumerWidget {
   const AppDrawer({super.key});
 
   Future<void> _logout(BuildContext context, WidgetRef ref) async {
-    Navigator.pop(context);
+    final authNotifier = ref.read(authProvider.notifier);
 
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         title: const Text('Cerrar sesión'),
         content: const Text('¿Seguro que deseas salir?'),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context, false),
+            onPressed: () => Navigator.pop(dialogContext, false),
             child: const Text('Cancelar'),
           ),
           FilledButton(
-            onPressed: () => Navigator.pop(context, true),
+            onPressed: () => Navigator.pop(dialogContext, true),
             child: const Text('Salir'),
           ),
         ],
       ),
     );
 
-    if (confirmed == true) {
-      await ref.read(authProvider.notifier).logout();
+    if (confirmed != true) return;
+
+    if (context.mounted) {
+      Navigator.of(context).pop();
     }
+
+    await authNotifier.logout();
   }
 
   void _navigate(BuildContext context, String route) {
@@ -142,8 +146,8 @@ class AppDrawer extends ConsumerWidget {
                   _DrawerSection(title: 'Navegación'),
                   if (user.can('reports.view'))
                     _DrawerTile(
-                      icon: Icons.bar_chart_rounded,
-                      title: 'Reportes',
+                      icon: Icons.home_rounded,
+                      title: 'Inicio',
                       onTap: () => _goTab(context, '/'),
                     ),
                   if (user.can('invoices.view'))

@@ -67,31 +67,26 @@ class InvoiceRepository {
       );
     } on DioException catch (e) {
       throw mapDioError(e);
+    } on TypeError catch (e) {
+      throw ApiException('Error al leer el listado de facturas: $e');
     }
   }
 
   Future<Invoice> getById(int id) async {
     try {
       final response = await _dio.get('/invoices/$id');
-      final data = response.data['data'] as Map<String, dynamic>;
-      return Invoice.fromJson(data);
+      return Invoice.fromJson(_extractData(response.data));
     } on DioException catch (e) {
       throw mapDioError(e);
+    } on TypeError catch (e) {
+      throw ApiException('Error al leer la factura: $e');
     }
   }
 
   Future<Invoice> create(CreateInvoiceInput input) async {
     try {
       final response = await _dio.post('/invoices', data: input.toJson());
-      final body = response.data;
-      if (body is! Map<String, dynamic>) {
-        throw ApiException('Respuesta inválida al crear la factura.');
-      }
-      final data = body['data'];
-      if (data is! Map<String, dynamic>) {
-        throw ApiException('Respuesta inválida al crear la factura.');
-      }
-      return Invoice.fromJson(data);
+      return Invoice.fromJson(_extractData(response.data));
     } on DioException catch (e) {
       throw mapDioError(e);
     } on TypeError catch (e) {
@@ -102,10 +97,11 @@ class InvoiceRepository {
   Future<Invoice> cancel(int id) async {
     try {
       final response = await _dio.patch('/invoices/$id/cancel');
-      final data = response.data['data'] as Map<String, dynamic>;
-      return Invoice.fromJson(data);
+      return Invoice.fromJson(_extractData(response.data));
     } on DioException catch (e) {
       throw mapDioError(e);
+    } on TypeError catch (e) {
+      throw ApiException('Error al anular la factura: $e');
     }
   }
 
@@ -122,6 +118,15 @@ class InvoiceRepository {
     } on DioException catch (e) {
       throw mapDioError(e);
     }
+  }
+
+  Map<String, dynamic> _extractData(dynamic body) {
+    if (body is Map<String, dynamic>) {
+      final data = body['data'];
+      if (data is Map<String, dynamic>) return data;
+      return body;
+    }
+    throw ApiException('Respuesta inválida de la factura.');
   }
 }
 

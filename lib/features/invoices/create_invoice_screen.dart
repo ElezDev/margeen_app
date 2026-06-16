@@ -428,9 +428,8 @@ class _CreateInvoiceScreenState extends ConsumerState<CreateInvoiceScreen> {
                   child: TextFormField(
                     controller: _unitPriceController,
                     keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(
-                      labelText: 'Precio venta',
-                      prefixText: r'$ ',
+                    decoration: currencyInputDecoration(
+                      labelText: 'Precio venta (COP)',
                     ),
                     onChanged: (_) => setState(() {}),
                   ),
@@ -441,9 +440,8 @@ class _CreateInvoiceScreenState extends ConsumerState<CreateInvoiceScreen> {
             TextFormField(
               controller: _unitCostController,
               keyboardType: TextInputType.number,
-              decoration: const InputDecoration(
-                labelText: 'Costo unitario',
-                prefixText: r'$ ',
+              decoration: currencyInputDecoration(
+                labelText: 'Costo unitario (COP)',
               ),
               onChanged: (_) => setState(() {}),
             ),
@@ -464,9 +462,8 @@ class _CreateInvoiceScreenState extends ConsumerState<CreateInvoiceScreen> {
             TextFormField(
               controller: _discountController,
               keyboardType: TextInputType.number,
-              decoration: const InputDecoration(
-                labelText: 'Descuento',
-                prefixText: r'$ ',
+              decoration: currencyInputDecoration(
+                labelText: 'Descuento (COP)',
               ),
               onChanged: (_) => setState(() {}),
             ),
@@ -479,7 +476,7 @@ class _CreateInvoiceScreenState extends ConsumerState<CreateInvoiceScreen> {
             const SizedBox(height: 20),
             if (_items.isNotEmpty && _previewTotal > 0)
               ProfitBanner(
-                totalProfit: _previewProfit.toString(),
+                totalProfit: _previewProfit,
                 marginPercent: _previewMargin,
               )
             else
@@ -487,7 +484,7 @@ class _CreateInvoiceScreenState extends ConsumerState<CreateInvoiceScreen> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text('Total estimado'),
+                    const Text('Total estimado (COP)'),
                     Text(
                       formatCurrencyNum(_previewTotal),
                       style: theme.textTheme.titleMedium?.copyWith(
