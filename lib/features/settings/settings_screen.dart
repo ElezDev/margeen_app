@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/auth/auth_provider.dart';
+import '../../core/config/app_version.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/theme/theme_mode_provider.dart';
 import '../../shared/widgets/app_loading_indicator.dart';
@@ -170,6 +171,17 @@ class SettingsScreen extends ConsumerWidget {
                     ),
                   ),
                 ],
+              ),
+            ),
+            const SizedBox(height: AppSpacing.section),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.page),
+              child: MargeenCard(
+                child: ListTile(
+                  leading: const Icon(Icons.info_outline_rounded),
+                  title: const Text('Versión de la app'),
+                  subtitle: Text(AppVersion.label),
+                ),
               ),
             ),
           ],

@@ -1,0 +1,3 @@
+# Nombre del APK al compilar release (sin espacios).
+# Ejemplo de salida: Margeen-1.0.0+2.apk
+app_slug: Margeen
