@@ -105,6 +105,14 @@ final routerProvider = Provider<GoRouter>((ref) {
           StatefulShellBranch(
             routes: [
               GoRoute(
+                path: '/clients',
+                builder: (context, state) => const ClientListScreen(),
+              ),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
                 path: '/more',
                 builder: (context, state) => const SettingsScreen(),
               ),

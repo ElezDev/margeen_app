@@ -6,6 +6,7 @@ import '../../core/auth/auth_provider.dart';
 import 'app_drawer.dart';
 import 'app_loading_indicator.dart';
 import 'app_navigation.dart';
+import 'home_bottom_nav.dart';
 
 class AppShell extends ConsumerWidget {
   const AppShell({super.key, required this.navigationShell});
@@ -24,50 +25,19 @@ class AppShell extends ConsumerWidget {
     final authState = ref.watch(authProvider);
     if (authState is! AuthAuthenticated) {
       return const Scaffold(
-        body: const AppLoadingPage(),
+        body: AppLoadingPage(),
       );
     }
 
-    final theme = Theme.of(context);
     final scaffoldKey = ref.watch(rootScaffoldKeyProvider);
 
     return Scaffold(
       key: scaffoldKey,
       drawer: const AppDrawer(),
       body: navigationShell,
-      bottomNavigationBar: DecoratedBox(
-        decoration: BoxDecoration(
-          color: theme.colorScheme.surfaceContainerLow,
-          border: Border(
-            top: BorderSide(
-              color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5),
-            ),
-          ),
-        ),
-        child: SafeArea(
-          top: false,
-          child: NavigationBar(
-            selectedIndex: navigationShell.currentIndex,
-            onDestinationSelected: _onDestinationSelected,
-            destinations: const [
-              NavigationDestination(
-                icon: Icon(Icons.home_outlined),
-                selectedIcon: Icon(Icons.home_rounded),
-                label: 'Inicio',
-              ),
-              NavigationDestination(
-                icon: Icon(Icons.receipt_long_outlined),
-                selectedIcon: Icon(Icons.receipt_long_rounded),
-                label: 'Facturas',
-              ),
-              NavigationDestination(
-                icon: Icon(Icons.tune_outlined),
-                selectedIcon: Icon(Icons.tune),
-                label: 'Ajustes',
-              ),
-            ],
-          ),
-        ),
+      bottomNavigationBar: HomeBottomNav(
+        currentIndex: navigationShell.currentIndex,
+        onSelected: _onDestinationSelected,
       ),
     );
   }

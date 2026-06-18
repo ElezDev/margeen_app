@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:intl/intl.dart';
 
+import '../../core/config/app_config.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_decorations.dart';
 import '../../core/theme/app_spacing.dart';
@@ -10,12 +10,9 @@ import '../../shared/models/dashboard_report.dart';
 import '../../shared/models/user.dart';
 import '../../shared/utils/formatters.dart';
 import '../../shared/widgets/app_loading_indicator.dart';
+import '../../shared/widgets/app_navigation.dart';
 import '../../shared/widgets/auth_guard.dart';
 import '../../shared/widgets/error_state.dart';
-import '../../shared/widgets/margeen_card.dart';
-import '../../shared/widgets/quick_action_card.dart';
-import '../../shared/widgets/screen_header.dart';
-import '../../shared/widgets/app_navigation.dart';
 import 'report_providers.dart';
 
 class DashboardScreen extends ConsumerWidget {
@@ -50,422 +47,93 @@ class _HomeDashboard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    if (!user.can('reports.view')) {
+    final canViewReports = user.can('reports.view');
+
+    if (!canViewReports) {
       return _HomeShell(
-        user: user,
         onRefresh: null,
-        slivers: [
-          SliverToBoxAdapter(child: _HomeHero(user: user)),
-          _quickActionsSliver(context, user),
+        children: [
+          _HomeTopBar(
+            canCreateInvoice: user.can('invoices.create'),
+          ),
+          _HomeProfileHeader(user: user),
+          _HomeQuickActions(user: user),
         ],
       );
     }
 
     final reportAsync = ref.watch(dashboardReportProvider);
+    final scope = ref.watch(dashboardScopeProvider);
+    final selectedDate = ref.watch(dashboardDateProvider);
 
     return reportAsync.when(
       loading: () => _HomeShell(
-        user: user,
         onRefresh: null,
-        slivers: [
-          SliverToBoxAdapter(
-            child: _HomeHero(
-              user: user,
-              isLoading: true,
-              scope: ref.watch(dashboardScopeProvider),
-              selectedDate: ref.watch(dashboardDateProvider),
-              onScopeChanged: (s) =>
-                  ref.read(dashboardScopeProvider.notifier).state = s,
-              onPickDate: () => _pickDate(context, ref),
-            ),
+        children: [
+          _HomeTopBar(canCreateInvoice: user.can('invoices.create')),
+          _HomeProfileHeader(user: user),
+          _HomeSalesCard(
+            scope: scope,
+            selectedDate: selectedDate,
+            isLoading: true,
+            onScopeChanged: (s) =>
+                ref.read(dashboardScopeProvider.notifier).state = s,
+            onPickDate: () => _pickDate(context, ref),
+            onRefresh: () => ref.invalidate(dashboardReportProvider),
           ),
-          _quickActionsSliver(context, user),
-          const SliverFillRemaining(
-            hasScrollBody: false,
-            child: const AppLoadingPage(),
+          _HomeQuickActions(user: user),
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 48),
+            child: AppLoadingPage(),
           ),
         ],
       ),
       error: (e, _) => _HomeShell(
-        user: user,
         onRefresh: () async => ref.invalidate(dashboardReportProvider),
-        slivers: [
-          SliverToBoxAdapter(child: _HomeHero(user: user)),
-          _quickActionsSliver(context, user),
-          SliverFillRemaining(
-            hasScrollBody: false,
-            child: ErrorState(
-              message: e.toString(),
-              onRetry: () => ref.invalidate(dashboardReportProvider),
-            ),
+        children: [
+          _HomeTopBar(canCreateInvoice: user.can('invoices.create')),
+          _HomeProfileHeader(user: user),
+          _HomeSalesCard(
+            scope: scope,
+            selectedDate: selectedDate,
+            onScopeChanged: (s) =>
+                ref.read(dashboardScopeProvider.notifier).state = s,
+            onPickDate: () => _pickDate(context, ref),
+            onRefresh: () => ref.invalidate(dashboardReportProvider),
+          ),
+          _HomeQuickActions(user: user),
+          ErrorState(
+            message: e.toString(),
+            onRetry: () => ref.invalidate(dashboardReportProvider),
           ),
         ],
       ),
       data: (report) => _HomeShell(
-        user: user,
         onRefresh: () async => ref.invalidate(dashboardReportProvider),
-        slivers: _reportSlivers(
-          context,
-          ref,
-          user,
-          report,
-          () => _pickDate(context, ref),
-        ),
-      ),
-    );
-  }
-
-  List<Widget> _reportSlivers(
-    BuildContext context,
-    WidgetRef ref,
-    AppUser user,
-    DashboardReport report,
-    VoidCallback onPickDate,
-  ) {
-    final summary = report.summary;
-    final scope = ref.watch(dashboardScopeProvider);
-    final selectedDate = ref.watch(dashboardDateProvider);
-    final theme = Theme.of(context);
-
-    return [
-      SliverToBoxAdapter(
-        child: _HomeHero(
-          user: user,
-          scope: scope,
-          selectedDate: selectedDate,
-          summary: summary,
-          periodFrom: report.periodFrom,
-          periodTo: report.periodTo,
-          onScopeChanged: (s) =>
-              ref.read(dashboardScopeProvider.notifier).state = s,
-          onPickDate: onPickDate,
-          onRefresh: () => ref.invalidate(dashboardReportProvider),
-        ),
-      ),
-      _quickActionsSliver(context, user),
-      SliverPadding(
-        padding: const EdgeInsets.fromLTRB(
-          AppSpacing.page,
-          AppSpacing.section,
-          AppSpacing.page,
-          0,
-        ),
-        sliver: SliverToBoxAdapter(
-          child: SectionHeader(
-            title: scope == DashboardScope.day
-                ? 'Resumen de hoy'
-                : 'Resumen del mes',
+        children: [
+          _HomeTopBar(canCreateInvoice: user.can('invoices.create')),
+          _HomeProfileHeader(user: user),
+          _HomeSalesCard(
+            scope: scope,
+            selectedDate: selectedDate,
+            summary: report.summary,
+            onScopeChanged: (s) =>
+                ref.read(dashboardScopeProvider.notifier).state = s,
+            onPickDate: () => _pickDate(context, ref),
+            onRefresh: () => ref.invalidate(dashboardReportProvider),
           ),
-        ),
-      ),
-      SliverPadding(
-        padding: const EdgeInsets.fromLTRB(
-          AppSpacing.page,
-          AppSpacing.card,
-          AppSpacing.page,
-          0,
-        ),
-        sliver: SliverToBoxAdapter(
-          child: Row(
-            children: [
-              Expanded(
-                child: _MetricTile(
-                  icon: Icons.payments_outlined,
-                  label: 'Ventas',
-                  value: formatCurrencyNum(summary.totalSales),
-                  color: AppColors.secondary,
-                ),
-              ),
-              const SizedBox(width: AppSpacing.card),
-              Expanded(
-                child: _MetricTile(
-                  icon: Icons.receipt_long_outlined,
-                  label: 'Facturas',
-                  value: '${summary.invoiceCount}',
-                  color: AppColors.primary,
-                ),
-              ),
-            ],
+          _HomeQuickActions(user: user),
+          _HomeMonthSummary(
+            scope: scope,
+            summary: report.summary,
+            onSalesTap: user.can('invoices.view')
+                ? () => context.go('/invoices')
+                : null,
+            onDocumentsTap: user.can('invoices.view')
+                ? () => context.go('/invoices')
+                : null,
           ),
-        ),
-      ),
-      if (summary.pendingCollection > 0)
-        SliverPadding(
-          padding: const EdgeInsets.fromLTRB(
-            AppSpacing.page,
-            AppSpacing.card,
-            AppSpacing.page,
-            0,
-          ),
-          sliver: SliverToBoxAdapter(
-            child: _MetricTile(
-              icon: Icons.schedule_outlined,
-              label: 'Por cobrar',
-              value: formatCurrencyNum(summary.pendingCollection),
-              color: AppColors.warning,
-              fullWidth: true,
-            ),
-          ),
-        ),
-      SliverPadding(
-        padding: const EdgeInsets.fromLTRB(
-          AppSpacing.page,
-          AppSpacing.section,
-          AppSpacing.page,
-          0,
-        ),
-        sliver: SliverToBoxAdapter(
-          child: SectionHeader(title: 'Mejores clientes'),
-        ),
-      ),
-      SliverPadding(
-        padding: const EdgeInsets.fromLTRB(
-          AppSpacing.page,
-          AppSpacing.card,
-          AppSpacing.page,
-          0,
-        ),
-        sliver: SliverToBoxAdapter(
-          child: report.topClients.isEmpty
-              ? const MargeenCard(child: Text('Sin ventas de clientes aún'))
-              : _TopClientsSection(clients: report.topClients),
-        ),
-      ),
-      if (report.topProducts.isNotEmpty) ...[
-        SliverPadding(
-          padding: const EdgeInsets.fromLTRB(
-            AppSpacing.page,
-            AppSpacing.section,
-            AppSpacing.page,
-            0,
-          ),
-          sliver: const SliverToBoxAdapter(
-            child: SectionHeader(title: 'Productos destacados'),
-          ),
-        ),
-        SliverPadding(
-          padding: const EdgeInsets.fromLTRB(
-            AppSpacing.page,
-            AppSpacing.card,
-            AppSpacing.page,
-            0,
-          ),
-          sliver: SliverList.separated(
-            itemCount: report.topProducts.length,
-            separatorBuilder: (_, __) =>
-                const SizedBox(height: AppSpacing.card),
-            itemBuilder: (context, index) {
-              final product = report.topProducts[index];
-              return MargeenCard(
-                child: Row(
-                  children: [
-                    Container(
-                      width: 44,
-                      height: 44,
-                      decoration: BoxDecoration(
-                        color: AppColors.accent.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(AppRadius.sm),
-                      ),
-                      child: const Icon(
-                        Icons.inventory_2_outlined,
-                        color: AppColors.accent,
-                        size: 22,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            product.description,
-                            style: theme.textTheme.titleSmall,
-                          ),
-                          Text(
-                            '${formatQuantity(product.totalQuantity)} vendidos',
-                            style: theme.textTheme.bodySmall?.copyWith(
-                              color: theme.colorScheme.onSurfaceVariant,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        Text(
-                          formatCurrencyNum(product.totalSales),
-                          style: theme.textTheme.titleSmall?.copyWith(
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                        Text(
-                          '+${formatCurrencyNum(product.totalProfit)}',
-                          style: theme.textTheme.labelSmall?.copyWith(
-                            color: AppColors.profit,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              );
-            },
-          ),
-        ),
-      ],
-      SliverPadding(
-        padding: const EdgeInsets.fromLTRB(
-          AppSpacing.page,
-          AppSpacing.section,
-          AppSpacing.page,
-          32,
-        ),
-        sliver: SliverToBoxAdapter(
-          child: SectionHeader(
-            title: 'Actividad reciente',
-            action: TextButton(
-              onPressed: user.can('invoices.view')
-                  ? () => context.go('/invoices')
-                  : null,
-              child: const Text('Ver todas'),
-            ),
-          ),
-        ),
-      ),
-      if (report.recentInvoices.isEmpty)
-        SliverPadding(
-          padding: const EdgeInsets.fromLTRB(
-            AppSpacing.page,
-            0,
-            AppSpacing.page,
-            32,
-          ),
-          sliver: const SliverToBoxAdapter(
-            child: MargeenCard(child: Text('Sin facturas recientes')),
-          ),
-        )
-      else
-        SliverPadding(
-          padding: const EdgeInsets.fromLTRB(
-            AppSpacing.page,
-            0,
-            AppSpacing.page,
-            32,
-          ),
-          sliver: SliverList.separated(
-            itemCount: report.recentInvoices.length,
-            separatorBuilder: (_, __) =>
-                const SizedBox(height: AppSpacing.card),
-            itemBuilder: (context, index) {
-              final invoice = report.recentInvoices[index];
-              return MargeenCard(
-                onTap: () => context.push('/invoices/${invoice.id}'),
-                child: Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(
-                        color: AppColors.primary.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(AppRadius.sm),
-                      ),
-                      child: const Icon(
-                        Icons.receipt_outlined,
-                        color: AppColors.primary,
-                        size: 20,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            invoice.number,
-                            style: theme.textTheme.titleSmall,
-                          ),
-                          Text(
-                            invoice.clientName,
-                            style: theme.textTheme.bodySmall?.copyWith(
-                              color: theme.colorScheme.onSurfaceVariant,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        Text(
-                          formatCurrencyNum(invoice.total),
-                          style: theme.textTheme.titleSmall?.copyWith(
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                        Text(
-                          '+${formatCurrencyNum(invoice.totalProfit)}',
-                          style: theme.textTheme.labelSmall?.copyWith(
-                            color: AppColors.profit,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              );
-            },
-          ),
-        ),
-    ];
-  }
-
-  Widget _quickActionsSliver(BuildContext context, AppUser user) {
-    return SliverPadding(
-      padding: const EdgeInsets.fromLTRB(
-        AppSpacing.page,
-        AppSpacing.section,
-        AppSpacing.page,
-        0,
-      ),
-      sliver: SliverToBoxAdapter(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const SectionHeader(title: 'Acciones rápidas'),
-            const SizedBox(height: AppSpacing.card),
-            Row(
-              children: [
-                Expanded(
-                  child: SizedBox(
-                    height: 100,
-                    child: QuickActionCard(
-                      icon: Icons.add_circle_outline,
-                      label: 'Nueva factura',
-                      color: AppColors.primary,
-                      enabled: user.can('invoices.create'),
-                      onTap: () => context.push('/invoices/new'),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: AppSpacing.card),
-                Expanded(
-                  child: SizedBox(
-                    height: 100,
-                    child: QuickActionCard(
-                      icon: Icons.receipt_long_outlined,
-                      label: 'Facturas',
-                      color: AppColors.secondary,
-                      enabled: user.can('invoices.view'),
-                      onTap: () => context.go('/invoices'),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
+        ],
       ),
     );
   }
@@ -473,87 +141,214 @@ class _HomeDashboard extends ConsumerWidget {
 
 class _HomeShell extends StatelessWidget {
   const _HomeShell({
-    required this.user,
-    required this.slivers,
+    required this.children,
     this.onRefresh,
   });
 
-  final AppUser user;
-  final List<Widget> slivers;
+  final List<Widget> children;
   final Future<void> Function()? onRefresh;
 
   @override
   Widget build(BuildContext context) {
-    final scrollView = CustomScrollView(
+    final listView = ListView(
       physics: const AlwaysScrollableScrollPhysics(),
-      slivers: slivers,
+      padding: const EdgeInsets.only(bottom: 24),
+      children: children,
     );
 
     return Scaffold(
       body: SafeArea(
         child: onRefresh == null
-            ? scrollView
-            : RefreshIndicator(onRefresh: onRefresh!, child: scrollView),
+            ? listView
+            : RefreshIndicator(onRefresh: onRefresh!, child: listView),
       ),
     );
   }
 }
 
-class _HomeHero extends StatelessWidget {
-  const _HomeHero({
-    required this.user,
+class _HomeTopBar extends StatelessWidget {
+  const _HomeTopBar({required this.canCreateInvoice});
+
+  final bool canCreateInvoice;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(8, 8, AppSpacing.page, 4),
+      child: Row(
+        children: [
+          const DrawerMenuButton(),
+          Expanded(
+            child: Text(
+              AppConfig.appName.toUpperCase(),
+              textAlign: TextAlign.center,
+              style: theme.textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w800,
+                letterSpacing: 1.2,
+              ),
+            ),
+          ),
+          Material(
+            color: AppColors.primary,
+            shape: const CircleBorder(),
+            clipBehavior: Clip.antiAlias,
+            child: InkWell(
+              onTap: canCreateInvoice
+                  ? () => context.push('/invoices/new')
+                  : null,
+              child: Padding(
+                padding: const EdgeInsets.all(10),
+                child: Icon(
+                  Icons.add_rounded,
+                  color: canCreateInvoice
+                      ? Colors.white
+                      : Colors.white.withValues(alpha: 0.45),
+                  size: 22,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _HomeProfileHeader extends StatelessWidget {
+  const _HomeProfileHeader({required this.user});
+
+  final AppUser user;
+
+  String _greeting() {
+    final hour = DateTime.now().hour;
+    if (hour < 12) return 'Buenos días,';
+    if (hour < 18) return 'Buenas tardes,';
+    return 'Buenas noches,';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final initial = user.name.isNotEmpty ? user.name[0].toUpperCase() : '?';
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.page,
+        12,
+        AppSpacing.page,
+        20,
+      ),
+      child: Row(
+        children: [
+          Stack(
+            clipBehavior: Clip.none,
+            children: [
+              Container(
+                width: 56,
+                height: 56,
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                alignment: Alignment.center,
+                child: Text(
+                  initial,
+                  style: theme.textTheme.headlineSmall?.copyWith(
+                    color: AppColors.primary,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ),
+              Positioned(
+                right: -1,
+                bottom: -1,
+                child: Container(
+                  width: 14,
+                  height: 14,
+                  decoration: BoxDecoration(
+                    color: AppColors.profit,
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: theme.colorScheme.surfaceContainerLowest,
+                      width: 2,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  _greeting(),
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+                Text(
+                  user.name,
+                  style: theme.textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: -0.3,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              border: Border.all(
+                color: theme.colorScheme.outlineVariant.withValues(alpha: 0.7),
+              ),
+            ),
+            child: Icon(
+              Icons.notifications_none_rounded,
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _HomeSalesCard extends StatelessWidget {
+  const _HomeSalesCard({
+    required this.scope,
+    required this.selectedDate,
     this.summary,
-    this.periodFrom,
-    this.periodTo,
-    this.scope,
-    this.selectedDate,
     this.isLoading = false,
     this.onScopeChanged,
     this.onPickDate,
     this.onRefresh,
   });
 
-  final AppUser user;
+  final DashboardScope scope;
+  final DateTime selectedDate;
   final DashboardSummary? summary;
-  final String? periodFrom;
-  final String? periodTo;
-  final DashboardScope? scope;
-  final DateTime? selectedDate;
   final bool isLoading;
   final ValueChanged<DashboardScope>? onScopeChanged;
   final VoidCallback? onPickDate;
   final VoidCallback? onRefresh;
-
-  String _periodHint() {
-    if (scope == DashboardScope.day && selectedDate != null) {
-      return DateFormat('EEEE d MMM', 'es_CO').format(selectedDate!);
-    }
-    final from = formatDate(periodFrom);
-    final to = formatDate(periodTo);
-    if (from != null && to != null && from != to) {
-      return '$from – $to';
-    }
-    if (selectedDate != null) {
-      return DateFormat('MMMM yyyy', 'es_CO').format(selectedDate!);
-    }
-    return 'Tu negocio en un vistazo';
-  }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
     return Container(
-      margin: const EdgeInsets.fromLTRB(
-        AppSpacing.page,
-        12,
-        AppSpacing.page,
-        0,
-      ),
-      padding: const EdgeInsets.all(AppSpacing.section),
+      margin: const EdgeInsets.symmetric(horizontal: AppSpacing.page),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         gradient: AppDecorations.brandGradient(theme.brightness),
-        borderRadius: BorderRadius.circular(AppRadius.xl),
+        borderRadius: BorderRadius.circular(24),
         boxShadow: AppDecorations.heroShadow(theme.brightness),
       ),
       child: Column(
@@ -561,155 +356,99 @@ class _HomeHero extends StatelessWidget {
         children: [
           Row(
             children: [
-              IconTheme(
-                data: const IconThemeData(color: Colors.white),
-                child: const DrawerMenuButton(),
-              ),
-              const Spacer(),
-              if (onRefresh != null)
-                IconButton(
-                  onPressed: onRefresh,
-                  icon: const Icon(Icons.refresh_rounded, color: Colors.white),
-                  tooltip: 'Actualizar',
-                ),
-            ],
-          ),
-          Row(
-            children: [
-              CircleAvatar(
-                radius: 26,
-                backgroundColor: Colors.white.withValues(alpha: 0.18),
-                child: Text(
-                  user.name.isNotEmpty ? user.name[0].toUpperCase() : '?',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 20,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 14),
               Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Hola, ${user.name.split(' ').first}',
-                      style: theme.textTheme.headlineSmall?.copyWith(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w700,
-                      ),
+                child: _ScopeToggle(
+                  scope: scope,
+                  onChanged: onScopeChanged,
+                ),
+              ),
+              if (onRefresh != null)
+                PopupMenuButton<String>(
+                  icon: const Icon(
+                    Icons.more_vert_rounded,
+                    color: Colors.white,
+                  ),
+                  color: theme.colorScheme.surfaceContainerLow,
+                  onSelected: (value) {
+                    switch (value) {
+                      case 'refresh':
+                        onRefresh!();
+                      case 'date':
+                        onPickDate?.call();
+                    }
+                  },
+                  itemBuilder: (context) => [
+                    const PopupMenuItem(
+                      value: 'refresh',
+                      child: Text('Actualizar'),
                     ),
-                    Text(
-                      user.company?.name ?? 'Margeen',
-                      style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.82),
-                        fontSize: 14,
-                      ),
+                    const PopupMenuItem(
+                      value: 'date',
+                      child: Text('Cambiar fecha'),
                     ),
                   ],
                 ),
-              ),
             ],
           ),
-          if (scope != null && onScopeChanged != null) ...[
-            const SizedBox(height: 16),
-            DecoratedBox(
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(AppRadius.sm),
-              ),
-              child: Row(
-                children: [
-                  _HeroScopeChip(
-                    label: 'Hoy',
-                    selected: scope == DashboardScope.day,
-                    onTap: () => onScopeChanged!(DashboardScope.day),
-                  ),
-                  _HeroScopeChip(
-                    label: 'Mes',
-                    selected: scope == DashboardScope.month,
-                    onTap: () => onScopeChanged!(DashboardScope.month),
-                  ),
-                ],
-              ),
-            ),
-            if (onPickDate != null && selectedDate != null) ...[
-              const SizedBox(height: 8),
-              InkWell(
-                onTap: onPickDate,
-                borderRadius: BorderRadius.circular(AppRadius.sm),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 4,
-                    vertical: 4,
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        Icons.calendar_today_outlined,
-                        size: 14,
-                        color: Colors.white.withValues(alpha: 0.85),
-                      ),
-                      const SizedBox(width: 6),
-                      Text(
-                        _periodHint(),
-                        style: TextStyle(
-                          color: Colors.white.withValues(alpha: 0.85),
-                          fontSize: 13,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ],
           const SizedBox(height: 20),
           if (isLoading)
             Text(
               'Cargando resumen…',
               style: TextStyle(
-                color: Colors.white.withValues(alpha: 0.8),
-                fontSize: 14,
+                color: Colors.white.withValues(alpha: 0.85),
+                fontSize: 15,
               ),
             )
           else if (summary != null) ...[
-            Text(
-              scope == DashboardScope.day ? 'Ventas de hoy' : 'Ventas del mes',
-              style: TextStyle(
-                color: Colors.white.withValues(alpha: 0.78),
-                fontSize: 13,
-              ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              formatCurrencyNum(summary!.totalSales),
-              style: theme.textTheme.headlineMedium?.copyWith(
-                color: Colors.white,
-                fontWeight: FontWeight.w800,
-                letterSpacing: -0.5,
-              ),
-            ),
-            const SizedBox(height: 12),
             Row(
               children: [
-                _HeroStatChip(
-                  icon: Icons.trending_up_rounded,
-                  label:
-                      'Ganancia ${formatCurrencyNum(summary!.totalProfit)}',
+                Icon(
+                  Icons.show_chart_rounded,
+                  size: 18,
+                  color: Colors.white.withValues(alpha: 0.85),
                 ),
                 const SizedBox(width: 8),
-                _HeroStatChip(
-                  icon: Icons.percent_rounded,
-                  label: 'Margen ${summary!.profitMarginPercent}%',
+                Text(
+                  'Ventas totales',
+                  style: TextStyle(
+                    color: Colors.white.withValues(alpha: 0.88),
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Text(
+              formatCurrencyNum(summary!.totalSales),
+              style: theme.textTheme.headlineLarge?.copyWith(
+                color: Colors.white,
+                fontWeight: FontWeight.w800,
+                letterSpacing: -1,
+                height: 1.05,
+              ),
+            ),
+            const SizedBox(height: 18),
+            Row(
+              children: [
+                Expanded(
+                  child: _SalesStatBox(
+                    label: 'GANANCIA',
+                    value: formatCurrencyNum(summary!.totalProfit),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: _SalesStatBox(
+                    label: 'MARGEN',
+                    value: '${summary!.profitMarginPercent}%',
+                  ),
                 ),
               ],
             ),
           ] else
             Text(
-              'Bienvenido a tu panel',
+              'Sin datos para este periodo',
               style: TextStyle(
                 color: Colors.white.withValues(alpha: 0.85),
                 fontSize: 15,
@@ -721,30 +460,69 @@ class _HomeHero extends StatelessWidget {
   }
 }
 
-class _HeroScopeChip extends StatelessWidget {
-  const _HeroScopeChip({
+class _ScopeToggle extends StatelessWidget {
+  const _ScopeToggle({
+    required this.scope,
+    this.onChanged,
+  });
+
+  final DashboardScope scope;
+  final ValueChanged<DashboardScope>? onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(
+        color: Colors.black.withValues(alpha: 0.18),
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Row(
+        children: [
+          _ScopeChip(
+            label: 'Hoy',
+            selected: scope == DashboardScope.day,
+            onTap: onChanged == null
+                ? null
+                : () => onChanged!(DashboardScope.day),
+          ),
+          _ScopeChip(
+            label: 'Este Mes',
+            selected: scope == DashboardScope.month,
+            onTap: onChanged == null
+                ? null
+                : () => onChanged!(DashboardScope.month),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ScopeChip extends StatelessWidget {
+  const _ScopeChip({
     required this.label,
     required this.selected,
-    required this.onTap,
+    this.onTap,
   });
 
   final String label;
   final bool selected;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
     return Expanded(
       child: Material(
         color: selected
-            ? Colors.white.withValues(alpha: 0.22)
+            ? Colors.white.withValues(alpha: 0.2)
             : Colors.transparent,
-        borderRadius: BorderRadius.circular(AppRadius.sm),
+        borderRadius: BorderRadius.circular(999),
         child: InkWell(
           onTap: onTap,
-          borderRadius: BorderRadius.circular(AppRadius.sm),
+          borderRadius: BorderRadius.circular(999),
           child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 10),
+            padding: const EdgeInsets.symmetric(vertical: 8),
             child: Text(
               label,
               textAlign: TextAlign.center,
@@ -761,191 +539,304 @@ class _HeroScopeChip extends StatelessWidget {
   }
 }
 
-class _HeroStatChip extends StatelessWidget {
-  const _HeroStatChip({required this.icon, required this.label});
+class _SalesStatBox extends StatelessWidget {
+  const _SalesStatBox({
+    required this.label,
+    required this.value,
+  });
 
-  final IconData icon;
   final String label;
+  final String value;
 
   @override
   Widget build(BuildContext context) {
-    return Flexible(
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-        decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.14),
-          borderRadius: BorderRadius.circular(999),
-          border: Border.all(color: Colors.white.withValues(alpha: 0.18)),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, size: 14, color: Colors.white),
-            const SizedBox(width: 5),
-            Flexible(
-              child: Text(
-                label,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 11,
-                  fontWeight: FontWeight.w600,
-                ),
-                overflow: TextOverflow.ellipsis,
-              ),
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: TextStyle(
+              color: Colors.white.withValues(alpha: 0.72),
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+              letterSpacing: 0.6,
             ),
-          ],
-        ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            value,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 16,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+        ],
       ),
     );
   }
 }
 
-class _MetricTile extends StatelessWidget {
-  const _MetricTile({
+class _HomeQuickActions extends StatelessWidget {
+  const _HomeQuickActions({required this.user});
+
+  final AppUser user;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.page,
+        AppSpacing.section,
+        AppSpacing.page,
+        0,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Acciones rápidas',
+            style: theme.textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          const SizedBox(height: 14),
+          Row(
+            children: [
+              Expanded(
+                child: _QuickActionTile(
+                  icon: Icons.add_rounded,
+                  label: 'Nueva Factura',
+                  color: AppColors.primary,
+                  enabled: user.can('invoices.create'),
+                  onTap: () => context.push('/invoices/new'),
+                ),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: _QuickActionTile(
+                  icon: Icons.receipt_long_outlined,
+                  label: 'Ver Historial',
+                  color: AppColors.secondary,
+                  enabled: user.can('invoices.view'),
+                  onTap: () => context.go('/invoices'),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _QuickActionTile extends StatelessWidget {
+  const _QuickActionTile({
     required this.icon,
     required this.label,
-    required this.value,
     required this.color,
-    this.fullWidth = false,
+    required this.enabled,
+    this.onTap,
   });
 
   final IconData icon;
   final String label;
-  final String value;
   final Color color;
-  final bool fullWidth;
+  final bool enabled;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final effectiveColor =
+        enabled ? color : theme.colorScheme.onSurfaceVariant;
 
-    return MargeenCard(
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(AppRadius.sm),
-            ),
-            child: Icon(icon, color: color, size: 20),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  label,
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
-                  ),
-                ),
-                Text(
-                  value,
-                  style: theme.textTheme.titleSmall?.copyWith(
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-              ],
+    return Material(
+      color: theme.colorScheme.surfaceContainerLow,
+      borderRadius: BorderRadius.circular(20),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: enabled ? onTap : null,
+        child: Container(
+          height: 118,
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: theme.colorScheme.outlineVariant.withValues(alpha: 0.45),
             ),
           ),
-        ],
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  color: effectiveColor.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: Icon(icon, color: effectiveColor, size: 24),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                label,
+                textAlign: TextAlign.center,
+                style: theme.textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.w700,
+                  color: enabled
+                      ? theme.colorScheme.onSurface
+                      : theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
 }
 
-class _TopClientsSection extends StatelessWidget {
-  const _TopClientsSection({required this.clients});
+class _HomeMonthSummary extends StatelessWidget {
+  const _HomeMonthSummary({
+    required this.scope,
+    required this.summary,
+    this.onSalesTap,
+    this.onDocumentsTap,
+  });
 
-  final List<DashboardTopClient> clients;
+  final DashboardScope scope;
+  final DashboardSummary summary;
+  final VoidCallback? onSalesTap;
+  final VoidCallback? onDocumentsTap;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final top = clients.take(3).toList();
-    final maxValue =
-        top.map((c) => c.totalSales).reduce((a, b) => a > b ? a : b);
+    final title = scope == DashboardScope.day
+        ? 'Resumen de hoy'
+        : 'Resumen del mes';
+    final docLabel = summary.invoiceCount == 1
+        ? '1 Factura'
+        : '${summary.invoiceCount} Facturas';
 
-    return MargeenCard(
-      padding: const EdgeInsets.all(AppSpacing.page),
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.page,
+        AppSpacing.section,
+        AppSpacing.page,
+        0,
+      ),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          for (var i = 0; i < top.length; i++) ...[
-            if (i > 0) const SizedBox(height: 16),
-            Row(
-              children: [
-                _RankBadge(rank: i + 1),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        top[i].clientName,
-                        style: theme.textTheme.titleSmall,
-                      ),
-                      Text(
-                        '${top[i].invoiceCount} facturas · ${formatCurrencyNum(top[i].totalSales)}',
-                        style: theme.textTheme.labelSmall?.copyWith(
-                          color: theme.colorScheme.onSurfaceVariant,
-                        ),
-                      ),
-                      const SizedBox(height: 6),
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(999),
-                        child: LinearProgressIndicator(
-                          value: maxValue > 0
-                              ? (top[i].totalSales / maxValue)
-                                  .clamp(0.0, 1.0)
-                              : 0,
-                          minHeight: 6,
-                          backgroundColor:
-                              theme.colorScheme.surfaceContainerHighest,
-                          color: AppColors.primary,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
+          Text(
+            title,
+            style: theme.textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.w800,
             ),
-          ],
+          ),
+          const SizedBox(height: 14),
+          _SummaryRow(
+            icon: Icons.payments_outlined,
+            iconColor: AppColors.profit,
+            title: 'Total Ventas',
+            value: formatCurrencyNum(summary.totalSales),
+            onTap: onSalesTap,
+          ),
+          const SizedBox(height: 12),
+          _SummaryRow(
+            icon: Icons.description_outlined,
+            iconColor: AppColors.secondary,
+            title: 'Documentos Emitidos',
+            value: docLabel,
+            onTap: onDocumentsTap,
+          ),
         ],
       ),
     );
   }
 }
 
-class _RankBadge extends StatelessWidget {
-  const _RankBadge({required this.rank});
+class _SummaryRow extends StatelessWidget {
+  const _SummaryRow({
+    required this.icon,
+    required this.iconColor,
+    required this.title,
+    required this.value,
+    this.onTap,
+  });
 
-  final int rank;
+  final IconData icon;
+  final Color iconColor;
+  final String title;
+  final String value;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
-    final colors = [
-      AppColors.warning,
-      AppColors.secondary,
-      AppColors.accent,
-    ];
-    final color = colors[(rank - 1).clamp(0, colors.length - 1)];
+    final theme = Theme.of(context);
 
-    return Container(
-      width: 36,
-      height: 36,
-      alignment: Alignment.center,
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.12),
-        shape: BoxShape.circle,
-      ),
-      child: Text(
-        '$rank',
-        style: TextStyle(
-          color: color,
-          fontWeight: FontWeight.w800,
-          fontSize: 15,
+    return Material(
+      color: theme.colorScheme.surfaceContainerLow,
+      borderRadius: BorderRadius.circular(18),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(
+              color: theme.colorScheme.outlineVariant.withValues(alpha: 0.45),
+            ),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: iconColor.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(icon, color: iconColor, size: 22),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                    Text(
+                      value,
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Icon(
+                Icons.chevron_right_rounded,
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ],
+          ),
         ),
       ),
     );

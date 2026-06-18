@@ -123,7 +123,7 @@ class AppDrawer extends ConsumerWidget {
                     _DrawerTile(
                       icon: Icons.people_outline,
                       title: 'Clientes',
-                      onTap: () => _navigate(context, '/clients'),
+                      onTap: () => _goTab(context, '/clients'),
                     ),
                   if (user.can('products.view'))
                     _DrawerTile(
