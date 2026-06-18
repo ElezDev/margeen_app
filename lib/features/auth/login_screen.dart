@@ -182,7 +182,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                           ),
                           const SizedBox(height: 20),
                           Text(
-                            'Demo: admin@edwin.com · password',
+                            'Demo: admin@demo.com · password',
                             style: theme.textTheme.bodySmall?.copyWith(
                               color: theme.colorScheme.onSurfaceVariant,
                             ),

@@ -31,6 +31,8 @@ class _InvoiceDetailScreenState extends ConsumerState<InvoiceDetailScreen> {
   bool _isCancelling = false;
 
   Future<void> _sharePdf(Invoice invoice) async {
+    if (_isSharingPdf) return;
+
     setState(() => _isSharingPdf = true);
 
     try {
@@ -40,12 +42,22 @@ class _InvoiceDetailScreenState extends ConsumerState<InvoiceDetailScreen> {
       final file = File('${dir.path}/${invoice.number}.pdf');
       await file.writeAsBytes(bytes);
 
-      await SharePlus.instance.share(
+      if (!mounted) return;
+
+      final result = await SharePlus.instance.share(
         ShareParams(
           files: [XFile(file.path)],
           text: 'Factura ${invoice.number}',
         ),
       );
+
+      if (!mounted) return;
+
+      // En algunos dispositivos el sheet de compartir no devuelve al instante.
+      if (result.status == ShareResultStatus.dismissed ||
+          result.status == ShareResultStatus.success) {
+        return;
+      }
     } on ApiException catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

@@ -244,7 +244,8 @@ class _CreateInvoiceScreenState extends ConsumerState<CreateInvoiceScreen> {
       final invoice = await ref.read(invoiceRepositoryProvider).create(input);
       ref.read(invoiceListProvider.notifier).refresh();
       if (mounted) {
-        context.push('/invoices/${invoice.id}');
+        // Reemplaza "Nueva factura" para que al volver no quede el formulario.
+        context.pushReplacement('/invoices/${invoice.id}');
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Factura creada.')),
         );
