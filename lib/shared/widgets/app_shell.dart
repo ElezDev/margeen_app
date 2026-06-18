@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../core/auth/auth_provider.dart';
 import 'app_drawer.dart';
+import 'app_loading_indicator.dart';
 import 'app_navigation.dart';
 
 class AppShell extends ConsumerWidget {
@@ -23,7 +24,7 @@ class AppShell extends ConsumerWidget {
     final authState = ref.watch(authProvider);
     if (authState is! AuthAuthenticated) {
       return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
+        body: const AppLoadingPage(),
       );
     }
 

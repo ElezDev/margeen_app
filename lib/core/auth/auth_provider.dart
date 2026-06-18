@@ -69,6 +69,13 @@ class AuthNotifier extends StateNotifier<AuthState> {
   void sessionExpired() {
     state = const AuthUnauthenticated();
   }
+
+  /// Evita quedar bloqueado en [AuthLoading] si el arranque falla o expira.
+  void forceUnauthenticated() {
+    if (state is AuthInitial || state is AuthLoading) {
+      state = const AuthUnauthenticated();
+    }
+  }
 }
 
 final authProvider = StateNotifierProvider<AuthNotifier, AuthState>((ref) {

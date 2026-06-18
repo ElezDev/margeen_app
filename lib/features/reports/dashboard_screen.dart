@@ -9,6 +9,7 @@ import '../../core/theme/app_spacing.dart';
 import '../../shared/models/dashboard_report.dart';
 import '../../shared/models/user.dart';
 import '../../shared/utils/formatters.dart';
+import '../../shared/widgets/app_loading_indicator.dart';
 import '../../shared/widgets/auth_guard.dart';
 import '../../shared/widgets/error_state.dart';
 import '../../shared/widgets/margeen_card.dart';
@@ -81,7 +82,7 @@ class _HomeDashboard extends ConsumerWidget {
           _quickActionsSliver(context, user),
           const SliverFillRemaining(
             hasScrollBody: false,
-            child: Center(child: CircularProgressIndicator()),
+            child: const AppLoadingPage(),
           ),
         ],
       ),

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../shared/widgets/app_loading_indicator.dart';
 import '../../shared/widgets/empty_state.dart';
 import '../../shared/widgets/error_state.dart';
 import '../../shared/widgets/margeen_card.dart';
@@ -72,7 +73,7 @@ class _UserListScreenState extends ConsumerState<UserListScreen> {
     ThemeData theme,
   ) {
     if (state.isLoading && state.users.isEmpty) {
-      return const Center(child: CircularProgressIndicator());
+      return const AppLoadingPage();
     }
 
     if (state.error != null && state.users.isEmpty) {
@@ -120,7 +121,7 @@ class _UserListScreenState extends ConsumerState<UserListScreen> {
         if (index >= state.users.length) {
           return const Padding(
             padding: EdgeInsets.all(16),
-            child: Center(child: CircularProgressIndicator()),
+            child: const AppLoadingPage(),
           );
         }
 

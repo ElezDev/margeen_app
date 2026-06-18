@@ -7,6 +7,7 @@ import '../../core/config/app_config.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_decorations.dart';
 import '../../core/theme/app_spacing.dart';
+import 'app_loading_indicator.dart';
 
 class AppDrawer extends ConsumerWidget {
   const AppDrawer({super.key});
@@ -58,7 +59,7 @@ class AppDrawer extends ConsumerWidget {
 
     if (user == null) {
       return const Drawer(
-        child: Center(child: CircularProgressIndicator()),
+        child: const AppLoadingPage(),
       );
     }
 

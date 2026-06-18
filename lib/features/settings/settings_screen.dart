@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/auth/auth_provider.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/theme/theme_mode_provider.dart';
+import '../../shared/widgets/app_loading_indicator.dart';
 import '../../shared/widgets/margeen_card.dart';
 import '../../shared/widgets/screen_header.dart';
 
@@ -18,7 +19,7 @@ class SettingsScreen extends ConsumerWidget {
 
     if (user == null) {
       return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
+        body: const AppLoadingPage(),
       );
     }
 

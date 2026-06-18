@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'app_loading_indicator.dart';
+
 class SearchPickerField<T> extends StatelessWidget {
   const SearchPickerField({
     super.key,
@@ -253,7 +255,7 @@ class _SearchPickerSheetState<T> extends State<_SearchPickerSheet<T>> {
 
   Widget _buildResults(ThemeData theme) {
     if (_isLoading) {
-      return const Center(child: CircularProgressIndicator());
+      return const AppLoadingPage();
     }
 
     if (_error != null) {

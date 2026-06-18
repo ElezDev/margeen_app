@@ -6,6 +6,7 @@ import '../../core/auth/auth_provider.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../shared/utils/formatters.dart';
+import '../../shared/widgets/app_loading_indicator.dart';
 import '../../shared/widgets/empty_state.dart';
 import '../../shared/widgets/error_state.dart';
 import '../../shared/widgets/list_tile_icon.dart';
@@ -52,7 +53,7 @@ class _InvoiceListScreenState extends ConsumerState<InvoiceListScreen> {
 
     if (user == null) {
       return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
+        body: const AppLoadingPage(),
       );
     }
 
@@ -105,7 +106,7 @@ class _InvoiceListScreenState extends ConsumerState<InvoiceListScreen> {
     bool canCreate,
   ) {
     if (state.isLoading && state.invoices.isEmpty) {
-      return const Center(child: CircularProgressIndicator());
+      return const AppLoadingPage();
     }
 
     if (state.error != null && state.invoices.isEmpty) {
@@ -160,7 +161,7 @@ class _InvoiceListScreenState extends ConsumerState<InvoiceListScreen> {
         if (index >= state.invoices.length) {
           return const Padding(
             padding: EdgeInsets.all(16),
-            child: Center(child: CircularProgressIndicator()),
+            child: const AppLoadingPage(),
           );
         }
 

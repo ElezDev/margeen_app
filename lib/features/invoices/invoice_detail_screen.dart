@@ -11,6 +11,7 @@ import '../../data/invoice_repository.dart';
 import '../../core/theme/app_colors.dart';
 import '../../shared/models/invoice.dart';
 import '../../shared/utils/formatters.dart';
+import '../../shared/widgets/app_loading_indicator.dart';
 import '../../shared/widgets/margeen_card.dart';
 import '../../shared/widgets/profit_banner.dart';
 import 'invoice_providers.dart';
@@ -115,7 +116,7 @@ class _InvoiceDetailScreenState extends ConsumerState<InvoiceDetailScreen> {
 
     if (user == null) {
       return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
+        body: const AppLoadingPage(),
       );
     }
 
@@ -135,11 +136,7 @@ class _InvoiceDetailScreenState extends ConsumerState<InvoiceDetailScreen> {
           if (cancelAction != null)
             IconButton(
               icon: _isCancelling
-                  ? const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
+                  ? const AppLoadingIndicator.small()
                   : const Icon(Icons.cancel_outlined),
               tooltip: 'Anular',
               onPressed:
@@ -148,7 +145,7 @@ class _InvoiceDetailScreenState extends ConsumerState<InvoiceDetailScreen> {
         ],
       ),
       body: invoiceAsync.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
+        loading: () => const AppLoadingPage(),
         error: (error, _) => Center(
           child: Padding(
             padding: const EdgeInsets.all(24),
@@ -333,13 +330,8 @@ class _InvoiceDetailBody extends StatelessWidget {
           FilledButton.icon(
             onPressed: isSharingPdf ? null : onSharePdf,
             icon: isSharingPdf
-                ? const SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: Colors.white,
-                    ),
+                ? const AppLoadingIndicator.small(
+                    color: AppLoadingColor.onPrimary,
                   )
                 : const Icon(Icons.picture_as_pdf_outlined),
             label: const Text('Compartir PDF'),
@@ -352,11 +344,7 @@ class _InvoiceDetailBody extends StatelessWidget {
           OutlinedButton.icon(
             onPressed: isCancelling ? null : onCancel,
             icon: isCancelling
-                ? const SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
+                ? const AppLoadingIndicator.small()
                 : const Icon(Icons.cancel_outlined),
             label: const Text('Anular factura'),
             style: OutlinedButton.styleFrom(

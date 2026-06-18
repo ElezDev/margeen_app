@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../core/auth/auth_provider.dart';
 import '../../shared/utils/formatters.dart';
+import '../../shared/widgets/app_loading_indicator.dart';
 import '../../shared/widgets/empty_state.dart';
 import '../../shared/widgets/error_state.dart';
 import '../../shared/widgets/margeen_card.dart';
@@ -101,7 +102,7 @@ class _ProductListScreenState extends ConsumerState<ProductListScreen> {
     bool canCreate,
   ) {
     if (state.isLoading && state.products.isEmpty) {
-      return const Center(child: CircularProgressIndicator());
+      return const AppLoadingPage();
     }
 
     if (state.error != null && state.products.isEmpty) {
@@ -151,7 +152,7 @@ class _ProductListScreenState extends ConsumerState<ProductListScreen> {
         if (index >= state.products.length) {
           return const Padding(
             padding: EdgeInsets.all(16),
-            child: Center(child: CircularProgressIndicator()),
+            child: const AppLoadingPage(),
           );
         }
 

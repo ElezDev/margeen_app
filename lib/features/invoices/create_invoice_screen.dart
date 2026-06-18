@@ -12,6 +12,7 @@ import '../../shared/models/client.dart';
 import '../../shared/models/invoice.dart';
 import '../../shared/models/product.dart';
 import '../../shared/utils/formatters.dart';
+import '../../shared/widgets/app_loading_indicator.dart';
 import '../../shared/widgets/margeen_card.dart';
 import '../../shared/widgets/profit_banner.dart';
 import '../../shared/widgets/search_picker_field.dart';
@@ -499,10 +500,8 @@ class _CreateInvoiceScreenState extends ConsumerState<CreateInvoiceScreen> {
             FilledButton(
               onPressed: _isSubmitting ? null : _submit,
               child: _isSubmitting
-                  ? const SizedBox(
-                      height: 20,
-                      width: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2),
+                  ? const AppLoadingIndicator.small(
+                      color: AppLoadingColor.onPrimary,
                     )
                   : Text(
                       _items.isEmpty

@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../features/auth/login_screen.dart';
+import '../../features/onboarding/onboarding_screen.dart';
+import '../onboarding/onboarding_provider.dart';
 import '../../features/clients/client_form_screen.dart';
 import '../../features/clients/client_list_screen.dart';
 import '../../features/home/home_screen.dart';
@@ -23,6 +25,7 @@ final _rootNavigatorKey = GlobalKey<NavigatorState>();
 final _routerRefreshProvider = Provider<Listenable>((ref) {
   final notifier = ValueNotifier(0);
   ref.listen(authProvider, (_, _) => notifier.value++);
+  ref.listen(onboardingProvider, (_, _) => notifier.value++);
   ref.onDispose(notifier.dispose);
   return notifier;
 });
@@ -36,21 +39,44 @@ final routerProvider = Provider<GoRouter>((ref) {
     refreshListenable: refresh,
     redirect: (context, state) {
       final authState = ref.read(authProvider);
-      final isLoading = authState is AuthInitial || authState is AuthLoading;
-      final isLoggedIn = authState is AuthAuthenticated;
-      final isLoginRoute = state.matchedLocation == '/login';
+      final onboardingState = ref.read(onboardingProvider);
+      final location = state.matchedLocation;
 
-      if (isLoading) {
-        return isLoginRoute ? null : '/login';
+      final isAuthLoading =
+          authState is AuthInitial || authState is AuthLoading;
+      final isOnboardingLoading = onboardingState is OnboardingInitial ||
+          onboardingState is OnboardingLoading;
+      final isLoggedIn = authState is AuthAuthenticated;
+      final onboardingDone = onboardingState is OnboardingReady &&
+          onboardingState.completed;
+
+      final isOnboardingRoute = location == '/onboarding';
+      final isLoginRoute = location == '/login';
+      final isPublicRoute = isOnboardingRoute || isLoginRoute;
+
+      if (isAuthLoading || isOnboardingLoading) {
+        return isPublicRoute ? null : '/login';
       }
 
-      if (!isLoggedIn && !isLoginRoute) return '/login';
+      if (!onboardingDone && !isOnboardingRoute) return '/onboarding';
+
+      if (onboardingDone && isOnboardingRoute) {
+        return isLoggedIn ? '/' : '/login';
+      }
+
+      if (!isLoggedIn && !isLoginRoute && !isOnboardingRoute) {
+        return '/login';
+      }
 
       if (isLoggedIn && isLoginRoute) return '/';
 
       return null;
     },
     routes: [
+      GoRoute(
+        path: '/onboarding',
+        builder: (context, state) => const OnboardingScreen(),
+      ),
       GoRoute(
         path: '/login',
         builder: (context, state) => const LoginScreen(),

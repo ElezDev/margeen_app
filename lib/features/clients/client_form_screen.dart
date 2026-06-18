@@ -6,6 +6,7 @@ import '../../core/api/api_exception.dart';
 import '../../core/auth/auth_provider.dart';
 import '../../data/client_repository.dart';
 import '../../shared/models/client.dart';
+import '../../shared/widgets/app_loading_indicator.dart';
 import 'client_providers.dart';
 
 class ClientFormScreen extends ConsumerStatefulWidget {
@@ -152,7 +153,7 @@ class _ClientFormScreenState extends ConsumerState<ClientFormScreen> {
       return Scaffold(
         appBar: AppBar(title: const Text('Editar cliente')),
         body: clientAsync.when(
-          loading: () => const Center(child: CircularProgressIndicator()),
+          loading: () => const AppLoadingPage(),
           error: (e, _) => Center(child: Text(e.toString())),
           data: (client) {
             _populate(client);
@@ -215,10 +216,8 @@ class _ClientFormScreenState extends ConsumerState<ClientFormScreen> {
           FilledButton(
             onPressed: _isSubmitting ? null : _submit,
             child: _isSubmitting
-                ? const SizedBox(
-                    height: 20,
-                    width: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2),
+                ? const AppLoadingIndicator.small(
+                    color: AppLoadingColor.onPrimary,
                   )
                 : Text(widget.isEditing ? 'Guardar' : 'Crear cliente'),
           ),

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/auth/auth_provider.dart';
 import '../../shared/models/user.dart';
+import 'app_loading_indicator.dart';
 
 /// Evita renderizar hijos si aún no hay sesión autenticada.
 class AuthGuard extends ConsumerWidget {
@@ -17,7 +18,7 @@ class AuthGuard extends ConsumerWidget {
     return switch (authState) {
       AuthAuthenticated(:final user) => builder(context, user),
       _ => const Scaffold(
-          body: Center(child: CircularProgressIndicator()),
+          body: AppLoadingPage(),
         ),
     };
   }

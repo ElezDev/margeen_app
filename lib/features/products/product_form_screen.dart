@@ -7,6 +7,7 @@ import '../../core/auth/auth_provider.dart';
 import '../../data/product_repository.dart';
 import '../../shared/models/product.dart';
 import '../../shared/utils/formatters.dart';
+import '../../shared/widgets/app_loading_indicator.dart';
 import 'product_providers.dart';
 
 class ProductFormScreen extends ConsumerStatefulWidget {
@@ -154,7 +155,7 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
       return Scaffold(
         appBar: AppBar(title: const Text('Editar producto')),
         body: productAsync.when(
-          loading: () => const Center(child: CircularProgressIndicator()),
+          loading: () => const AppLoadingPage(),
           error: (e, _) => Center(child: Text(e.toString())),
           data: (product) {
             _populate(product);
@@ -230,10 +231,8 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
           FilledButton(
             onPressed: _isSubmitting ? null : _submit,
             child: _isSubmitting
-                ? const SizedBox(
-                    height: 20,
-                    width: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2),
+                ? const AppLoadingIndicator.small(
+                    color: AppLoadingColor.onPrimary,
                   )
                 : Text(widget.isEditing ? 'Guardar' : 'Crear producto'),
           ),

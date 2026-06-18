@@ -6,6 +6,7 @@ import '../../core/api/api_exception.dart';
 import '../../core/auth/auth_provider.dart';
 import '../../data/user_repository.dart';
 import '../../shared/models/managed_user.dart';
+import '../../shared/widgets/app_loading_indicator.dart';
 import 'user_providers.dart';
 
 class UserFormScreen extends ConsumerStatefulWidget {
@@ -184,7 +185,7 @@ class _UserFormScreenState extends ConsumerState<UserFormScreen> {
       return Scaffold(
         appBar: AppBar(title: const Text('Editar usuario')),
         body: userAsync.when(
-          loading: () => const Center(child: CircularProgressIndicator()),
+          loading: () => const AppLoadingPage(),
           error: (error, _) => Center(
             child: Padding(
               padding: const EdgeInsets.all(24),
@@ -350,10 +351,8 @@ class _UserFormScreenState extends ConsumerState<UserFormScreen> {
               minimumSize: const Size.fromHeight(48),
             ),
             child: _isSubmitting
-                ? const SizedBox(
-                    height: 20,
-                    width: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2),
+                ? const AppLoadingIndicator.small(
+                    color: AppLoadingColor.onPrimary,
                   )
                 : Text(widget.isEditing ? 'Guardar cambios' : 'Crear usuario'),
           ),
@@ -362,11 +361,7 @@ class _UserFormScreenState extends ConsumerState<UserFormScreen> {
             OutlinedButton.icon(
               onPressed: _isDeactivating ? null : _deactivate,
               icon: _isDeactivating
-                  ? const SizedBox(
-                      width: 16,
-                      height: 16,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
+                  ? const AppLoadingIndicator.small()
                   : const Icon(Icons.person_off_outlined),
               label: const Text('Desactivar usuario'),
               style: OutlinedButton.styleFrom(

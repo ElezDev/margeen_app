@@ -199,6 +199,11 @@ abstract final class AppTheme {
           borderRadius: BorderRadius.circular(AppRadius.sm),
         ),
       ),
+      progressIndicatorTheme: ProgressIndicatorThemeData(
+        color: AppColors.primary,
+        circularTrackColor: AppColors.primary.withValues(alpha: 0.18),
+        linearTrackColor: AppColors.primary.withValues(alpha: 0.18),
+      ),
       dialogTheme: DialogThemeData(
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppRadius.lg),

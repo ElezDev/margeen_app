@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -6,9 +8,11 @@ import 'package:intl/date_symbol_data_local.dart';
 import 'core/auth/auth_provider.dart';
 import 'core/auth/session_expired_handler.dart';
 import 'core/config/app_config.dart';
+import 'core/onboarding/onboarding_provider.dart';
 import 'core/router/app_router.dart';
 import 'core/theme/app_theme.dart';
 import 'core/theme/theme_mode_provider.dart';
+import 'shared/widgets/app_splash_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -24,21 +28,62 @@ class MargeenApp extends ConsumerStatefulWidget {
 }
 
 class _MargeenAppState extends ConsumerState<MargeenApp> {
+  bool _splashMinTimeDone = false;
+
   @override
   void initState() {
     super.initState();
     final authNotifier = ref.read(authProvider.notifier);
     ref.read(sessionExpiredHandlerProvider).onExpired =
         authNotifier.sessionExpired;
-    Future.microtask(_bootstrap);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      unawaited(_bootstrap());
+    });
   }
 
+  static const _minSplashDuration = Duration(milliseconds: 1400);
+  static const _bootstrapTimeout = Duration(seconds: 18);
+
   Future<void> _bootstrap() async {
+    final started = DateTime.now();
     final themeNotifier = ref.read(themeModeProvider.notifier);
+    final onboardingNotifier = ref.read(onboardingProvider.notifier);
     final authNotifier = ref.read(authProvider.notifier);
-    await themeNotifier.initialize();
-    if (!mounted) return;
-    await authNotifier.bootstrap();
+
+    try {
+      await Future.wait([
+        themeNotifier.initialize(),
+        onboardingNotifier.initialize(),
+      ]).timeout(_bootstrapTimeout);
+
+      if (!mounted) return;
+
+      await authNotifier.bootstrap().timeout(_bootstrapTimeout);
+    } on TimeoutException catch (e, st) {
+      debugPrint('Bootstrap: tiempo de espera agotado: $e\n$st');
+      onboardingNotifier.forceReady();
+      authNotifier.forceUnauthenticated();
+    } catch (e, st) {
+      debugPrint('Bootstrap: error inesperado: $e\n$st');
+      onboardingNotifier.forceReady();
+      authNotifier.forceUnauthenticated();
+    }
+
+    final elapsed = DateTime.now().difference(started);
+    final remaining = _minSplashDuration - elapsed;
+    if (remaining > Duration.zero) {
+      await Future<void>.delayed(remaining);
+    }
+
+    if (mounted) {
+      setState(() => _splashMinTimeDone = true);
+    }
+  }
+
+  bool _showSplash(AuthState authState) {
+    if (_splashMinTimeDone) return false;
+    if (authState is AuthAuthenticated) return false;
+    return true;
   }
 
   @override
@@ -46,8 +91,7 @@ class _MargeenAppState extends ConsumerState<MargeenApp> {
     final router = ref.watch(routerProvider);
     final authState = ref.watch(authProvider);
     final themeMode = ref.watch(themeModeProvider);
-    final isBootstrapping =
-        authState is AuthInitial || authState is AuthLoading;
+    final showSplash = _showSplash(authState);
 
     return MaterialApp.router(
       title: AppConfig.appName,
@@ -67,12 +111,21 @@ class _MargeenAppState extends ConsumerState<MargeenApp> {
       ],
       routerConfig: router,
       builder: (context, child) {
-        if (isBootstrapping && authState is! AuthAuthenticated) {
-          return const Scaffold(
-            body: Center(child: CircularProgressIndicator()),
-          );
+        final content = child;
+        if (content == null) {
+          return const AppSplashScreen();
         }
-        return child ?? const SizedBox.shrink();
+
+        return Stack(
+          fit: StackFit.expand,
+          children: [
+            content,
+            if (showSplash)
+              const Positioned.fill(
+                child: AppSplashScreen(),
+              ),
+          ],
+        );
       },
     );
   }
