@@ -1,15 +1,17 @@
 import 'dart:io';
 
-/// Sincroniza la versión desde [pubspec.yaml] y opcionalmente la incrementa.
+/// Sincroniza versión desde pubspec.yaml, compila APK y lo renombra.
 ///
 /// Uso:
-///   dart run tool/sync_app_version.dart          # sync + mostrar info
-///   dart run tool/sync_app_version.dart show
+///   dart run tool/sync_app_version.dart release
+///     → sync + flutter build apk --release + copiar Margeen-1.0.0+1.apk
+///
+///   dart run tool/sync_app_version.dart
+///   flutter build apk --release
+///   dart run tool/sync_app_version.dart copy
+///
 ///   dart run tool/sync_app_version.dart bump patch
-///   dart run tool/sync_app_version.dart bump minor
-///   dart run tool/sync_app_version.dart bump major
-///   dart run tool/sync_app_version.dart bump build
-void main(List<String> args) {
+void main(List<String> args) async {
   final root = _findProjectRoot();
   final pubspecFile = File('${root.path}/pubspec.yaml');
   final configFile = File('${root.path}/tool/version_config.yaml');
@@ -21,12 +23,27 @@ void main(List<String> args) {
   }
 
   final command = args.isEmpty ? 'sync' : args.first;
-  final bumpTarget = args.length > 1 ? args[1] : null;
+
+  if (command == 'release') {
+    await _runRelease(root, pubspecFile, configFile, appVersionFile);
+    return;
+  }
+
+  if (command == 'copy') {
+    final pubspec = pubspecFile.readAsStringSync();
+    final version = _readPubspecVersion(pubspec);
+    final slug = _readAppSlug(configFile);
+    _writeAppVersionDart(appVersionFile, version, slug);
+    final apkPath = _copyReleaseApk(root, slug, version.full);
+    _printApkReady(slug, version.full, apkPath);
+    return;
+  }
 
   var pubspec = pubspecFile.readAsStringSync();
   var version = _readPubspecVersion(pubspec);
 
   if (command == 'bump') {
+    final bumpTarget = args.length > 1 ? args[1] : null;
     if (bumpTarget == null) {
       _printUsage();
       exit(1);
@@ -42,18 +59,77 @@ void main(List<String> args) {
 
   final slug = _readAppSlug(configFile);
   _writeAppVersionDart(appVersionFile, version, slug);
-
-  stdout.writeln('App: $slug');
-  stdout.writeln('Versión: ${version.full}');
-  stdout.writeln('APK sugerido: $slug-${version.full}.apk');
-  stdout.writeln('Generado: lib/core/config/app_version.dart');
+  _printSyncInfo(slug, version.full);
 
   if (command == 'sync') {
     stdout.writeln('');
-    stdout.writeln('Siguiente paso:');
-    stdout.writeln('  ./tool/build_release_apk.sh');
-    stdout.writeln('  # o: flutter build apk --release');
+    stdout.writeln('Compilar y nombrar APK (todo en uno):');
+    stdout.writeln('  dart run tool/sync_app_version.dart release');
+    stdout.writeln('');
+    stdout.writeln('O manualmente:');
+    stdout.writeln('  flutter build apk --release');
+    stdout.writeln('  dart run tool/sync_app_version.dart copy');
   }
+}
+
+Future<void> _runRelease(
+  Directory root,
+  File pubspecFile,
+  File configFile,
+  File appVersionFile,
+) async {
+  final pubspec = pubspecFile.readAsStringSync();
+  final version = _readPubspecVersion(pubspec);
+  final slug = _readAppSlug(configFile);
+
+  _writeAppVersionDart(appVersionFile, version, slug);
+  stdout.writeln('→ Versión sincronizada: ${version.full}');
+
+  stdout.writeln('→ Compilando APK release...');
+  final build = await Process.start(
+    'flutter',
+    ['build', 'apk', '--release'],
+    workingDirectory: root.path,
+    mode: ProcessStartMode.inheritStdio,
+  );
+  final code = await build.exitCode;
+  if (code != 0) {
+    stderr.writeln('Error: flutter build terminó con código $code');
+    exit(code);
+  }
+
+  final apkPath = _copyReleaseApk(root, slug, version.full);
+  stdout.writeln('');
+  _printApkReady(slug, version.full, apkPath);
+}
+
+void _printSyncInfo(String slug, String versionFull) {
+  stdout.writeln('App: $slug');
+  stdout.writeln('Versión: $versionFull');
+  stdout.writeln('APK: $slug-$versionFull.apk');
+  stdout.writeln('Generado: lib/core/config/app_version.dart');
+}
+
+void _printApkReady(String slug, String versionFull, String apkPath) {
+  stdout.writeln('✓ APK listo para distribuir:');
+  stdout.writeln('  $apkPath');
+  stdout.writeln('');
+  stdout.writeln('Nombre: $slug-$versionFull.apk');
+}
+
+String _copyReleaseApk(Directory root, String slug, String versionFull) {
+  final outputDir = Directory('${root.path}/build/app/outputs/flutter-apk');
+  final source = File('${outputDir.path}/app-release.apk');
+
+  if (!source.existsSync()) {
+    stderr.writeln('No se encontró app-release.apk');
+    stderr.writeln('Ejecuta primero: flutter build apk --release');
+    exit(1);
+  }
+
+  final target = File('${outputDir.path}/$slug-$versionFull.apk');
+  source.copySync(target.path);
+  return target.path;
 }
 
 Directory _findProjectRoot() {
@@ -83,7 +159,8 @@ class _AppVersion {
 }
 
 _AppVersion _readPubspecVersion(String pubspec) {
-  final match = RegExp(r'^version:\s*([^\s#]+)', multiLine: true).firstMatch(pubspec);
+  final match =
+      RegExp(r'^version:\s*([^\s#]+)', multiLine: true).firstMatch(pubspec);
   if (match == null) {
     stderr.writeln('No se pudo leer version: en pubspec.yaml');
     exit(1);
@@ -162,8 +239,9 @@ abstract final class AppVersion {
 
 void _printUsage() {
   stdout.writeln('Uso:');
+  stdout.writeln('  dart run tool/sync_app_version.dart release');
+  stdout.writeln('  dart run tool/sync_app_version.dart copy');
   stdout.writeln('  dart run tool/sync_app_version.dart');
-  stdout.writeln('  dart run tool/sync_app_version.dart show');
   stdout.writeln('  dart run tool/sync_app_version.dart bump patch');
   stdout.writeln('  dart run tool/sync_app_version.dart bump minor');
   stdout.writeln('  dart run tool/sync_app_version.dart bump major');
