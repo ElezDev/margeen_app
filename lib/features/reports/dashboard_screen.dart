@@ -14,6 +14,7 @@ import '../../shared/widgets/app_navigation.dart';
 import '../../shared/widgets/auth_guard.dart';
 import '../../shared/widgets/error_state.dart';
 import 'report_providers.dart';
+import 'widgets/dashboard_charts_section.dart';
 
 class DashboardScreen extends ConsumerWidget {
   const DashboardScreen({super.key});
@@ -131,6 +132,12 @@ class _HomeDashboard extends ConsumerWidget {
                 : null,
             onDocumentsTap: user.can('invoices.view')
                 ? () => context.go('/invoices')
+                : null,
+          ),
+          DashboardChartsSection(
+            report: report,
+            onInvoiceTap: user.can('invoices.view')
+                ? (id) => context.push('/invoices/$id')
                 : null,
           ),
         ],
